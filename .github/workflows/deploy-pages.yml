@@ -4,8 +4,11 @@ name: Deploy Stock Context to GitHub Pages
 on:
   push:
     branches: [main]
-  # 12:30 UTC ≈ 7:30 AM ET (EST) / 8:30 AM EDT — after 6 AM publish (typical 5–25 min).
+  # Early: ~2:30 AM ET (dual UTC for DST). After 2 AM publish (pre-earnings + night B).
+  # Morning: ~7:30 AM ET after 6 AM publish (notes + themes).
   schedule:
+    - cron: "30 6 * * *"
+    - cron: "30 7 * * *"
     - cron: "30 12 * * *"
   workflow_dispatch:
     inputs:

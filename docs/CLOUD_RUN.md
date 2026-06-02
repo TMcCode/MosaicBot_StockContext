@@ -21,7 +21,8 @@ Schedulers: `./scripts/setup_stockcontext_automation_schedulers.sh`
 
 | Cloud Run job | Scheduler (ET) | Module |
 |---------------|----------------|--------|
-| `stockcontext-publish-job` | 06:00 daily | `stockcontext_jobs.publish_stockcontext` |
+| `stockcontext-publish-job` | **02:00** daily | `stockcontext_jobs.publish_stockcontext` (early, after A+B) |
+| `stockcontext-publish-job` | **06:00** daily | same (morning, after notes + themes) |
 
 Deploy: `.github/workflows/deploy-stockcontext-publish.yml`  
 Scheduler: `./scripts/setup_stockcontext_publish_scheduler.sh`
