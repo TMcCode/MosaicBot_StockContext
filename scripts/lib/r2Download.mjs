@@ -22,7 +22,11 @@ let localEnvLoaded = false;
 function loadLocalEnv() {
   if (localEnvLoaded) return;
   localEnvLoaded = true;
-  const roots = [process.cwd(), path.join(process.cwd(), "..")];
+  const roots = [
+    process.cwd(),
+    path.join(process.cwd(), ".."),
+    path.join(process.cwd(), "../MosaicBotMain_Local_Dev"),
+  ];
   for (const root of roots) {
     for (const name of [".env.local", ".env"]) {
       const p = path.join(root, name);
@@ -216,7 +220,7 @@ export async function downloadR2Object(objectPath) {
 
 export async function r2ObjectMetadata(objectPath) {
   const req = signedRequest("HEAD", objectPath);
-  const res = await fetchWithRetry(
+  let res = await fetchWithRetry(
     req.url,
     { method: "HEAD", headers: req.headers },
     { label: `R2 HEAD s3://${req.bucket}/${objectPath}` },
@@ -224,7 +228,24 @@ export async function r2ObjectMetadata(objectPath) {
   if (res.status === 404) {
     return null;
   }
-  if (!res.ok) {
+  // R2 sometimes rejects HEAD (400) — fall back to a tiny ranged GET for etag.
+  if (res.status === 400 || res.status === 405) {
+    const getReq = signedRequest("GET", objectPath);
+    res = await fetchWithRetry(
+      getReq.url,
+      {
+        method: "GET",
+        headers: { ...getReq.headers, Range: "bytes=0-0" },
+      },
+      { label: `R2 GET (metadata) s3://${getReq.bucket}/${objectPath}` },
+    );
+    if (res.status === 404) {
+      return null;
+    }
+    if (!res.ok) {
+      throw new Error(`R2 metadata ${res.status} s3://${getReq.bucket}/${objectPath}`);
+    }
+  } else if (!res.ok) {
     throw new Error(`R2 metadata ${res.status} s3://${req.bucket}/${objectPath}`);
   }
   const etag = (res.headers.get("etag") || "").replace(/^"|"$/g, "");

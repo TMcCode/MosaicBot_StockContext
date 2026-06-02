@@ -6,7 +6,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
-import { STOCKCONTEXT_PREFIX } from "./lib/storageConfig.mjs";
+import { STOCKCONTEXT_PREFIX, STOCKCONTEXT_PUBLIC_BASE_URL } from "./lib/storageConfig.mjs";
 import { downloadR2Object, r2ObjectMetadata, r2SyncEnabled } from "./lib/r2Download.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -35,7 +35,48 @@ function saveMeta(meta) {
   fs.writeFileSync(META_FILE, JSON.stringify(meta, null, 2));
 }
 
+function cdnSyncEnabled() {
+  return process.env.STOCKCONTEXT_SYNC_VIA_CDN === "1";
+}
+
+function cdnUrl(relative) {
+  return `${STOCKCONTEXT_PUBLIC_BASE_URL}/${relative.replace(/^\//, "")}`;
+}
+
+async function downloadFromCdn(relative, meta) {
+  const url = cdnUrl(relative);
+  const prev = meta.files[relative];
+  const head = await fetch(url, { method: "HEAD", cache: "no-store" });
+  if (head.status === 404) {
+    return false;
+  }
+  if (!head.ok) {
+    throw new Error(`CDN ${head.status} ${url}`);
+  }
+  const etag = (head.headers.get("etag") || "").replace(/^"|"$/g, "");
+  const dest = path.join(CACHE, relative);
+  if (etag && prev?.etag === etag && fs.existsSync(dest)) {
+    return false;
+  }
+  const res = await fetch(url, { cache: "no-store" });
+  if (!res.ok) {
+    throw new Error(`CDN ${res.status} ${url}`);
+  }
+  const text = await res.text();
+  ensureDir(dest);
+  fs.writeFileSync(dest, text);
+  meta.files[relative] = {
+    etag: etag || undefined,
+    at: new Date().toISOString(),
+    source: "cdn",
+  };
+  return true;
+}
+
 async function downloadRelative(relative, meta) {
+  if (cdnSyncEnabled()) {
+    return downloadFromCdn(relative, meta);
+  }
   const objectPath = scPath(relative);
   const dest = path.join(CACHE, relative);
   const prev = meta.files[relative];
@@ -118,11 +159,16 @@ async function main() {
   const meta = loadMeta();
   let downloaded = 0;
 
-  if (r2SyncEnabled()) {
+  const remoteSync = cdnSyncEnabled() || r2SyncEnabled();
+  if (cdnSyncEnabled()) {
+    console.log("sync-stockcontext-ci: using public CDN (STOCKCONTEXT_SYNC_VIA_CDN=1)");
+  }
+
+  if (remoteSync) {
     if (await downloadRelative("manifest.v0.json", meta)) downloaded += 1;
     const manifestPath = path.join(CACHE, "manifest.v0.json");
     if (!fs.existsSync(manifestPath)) {
-      console.error("::error::manifest.v0.json missing after R2 sync");
+      console.error("::error::manifest.v0.json missing after remote sync");
       process.exit(1);
     }
     const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
@@ -144,25 +190,32 @@ async function main() {
         console.warn(`skip ${rel}: ${e?.message || e}`);
       }
     }
-    console.log(`sync-stockcontext-ci: R2 sync done (${downloaded} files updated)`);
+    const label = cdnSyncEnabled() ? "CDN" : "R2";
+    console.log(`sync-stockcontext-ci: ${label} sync done (${downloaded} files updated)`);
   } else {
-    seedFromExamples(meta);
+    const manifestPath = path.join(CACHE, "manifest.v0.json");
+    if (fs.existsSync(manifestPath)) {
+      console.log("sync-stockcontext-ci: using existing cache (no remote sync env)");
+    } else {
+      seedFromExamples(meta);
+    }
   }
 
   saveMeta(meta);
   const manifestPath = path.join(CACHE, "manifest.v0.json");
   if (!fs.existsSync(manifestPath)) {
-    console.error("::error::No manifest in cache — set R2 secrets or add examples");
+    console.error("::error::No manifest in cache — set R2 secrets, STOCKCONTEXT_SYNC_VIA_CDN=1, or add examples");
     process.exit(1);
   }
-  if (r2SyncEnabled()) {
-    const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
-    if (manifest.build_id === "example-local-001") {
+  const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+  if (manifest.build_id === "example-local-001") {
+    if (process.env.CI === "true" || remoteSync) {
       console.error(
-        "::error::manifest still example-local-001 — stale cache or R2 sync failed; use cache key v2+",
+        "::error::manifest still example-local-001 — stale cache or remote sync failed; bump cache key or force_build",
       );
       process.exit(1);
     }
+  } else if (remoteSync) {
     const total = manifest.stats?.total_tickers ?? manifest.tickers?.length ?? 0;
     console.log(
       `sync-stockcontext-ci: manifest build_id=${manifest.build_id} tickers=${total} themes=${manifest.stats?.total_themes ?? manifest.themes?.length ?? 0}`,

@@ -34,17 +34,13 @@ jobs:
       - uses: actions/cache@v4
         with:
           path: .cache/stockcontext-public
-          key: stockcontext-public-v2
-          restore-keys: stockcontext-public-v2
+          key: stockcontext-public-v3
+          restore-keys: stockcontext-public-v3
       - name: Decide if build is needed
         id: check
         env:
           GITHUB_EVENT_NAME: ${{ github.event_name }}
           FORCE_BUILD: ${{ github.event.inputs.force_build }}
-          R2_ENDPOINT_URL: ${{ secrets.R2_ENDPOINT_URL }}
-          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-          STOCKTHEMES_SYNC_VIA_R2: "1"
         run: node scripts/ci-should-build.mjs
 
   build:
@@ -60,18 +56,16 @@ jobs:
       - uses: actions/cache@v4
         with:
           path: .cache/stockcontext-public
-          key: stockcontext-public-v2
-          restore-keys: stockcontext-public-v2
+          key: stockcontext-public-v3
+          restore-keys: stockcontext-public-v3
       - run: npm ci
-      - name: Sync public JSON from R2
+      - name: Sync public JSON from CDN
         env:
-          R2_ENDPOINT_URL: ${{ secrets.R2_ENDPOINT_URL }}
-          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-          STOCKTHEMES_SYNC_VIA_R2: "1"
+          STOCKCONTEXT_SYNC_VIA_CDN: "1"
         run: node scripts/sync-stockcontext-ci.mjs
       - name: Build static export
         env:
+          CI: "true"
           # Required for https://tmccode.github.io/MosaicBot_StockContext/ (override via repo variable)
           NEXT_PUBLIC_BASE_PATH: ${{ vars.NEXT_PUBLIC_BASE_PATH || '/MosaicBot_StockContext' }}
           NEXT_PUBLIC_DATA_BASE_URL: ${{ vars.NEXT_PUBLIC_DATA_BASE_URL || 'https://storage.stockthemes.ai/stockcontext/' }}

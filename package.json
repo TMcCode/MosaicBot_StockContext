@@ -11,7 +11,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "sync:cache": "node scripts/sync-stockcontext-ci.mjs"
+    "sync:cache": "node scripts/sync-stockcontext-ci.mjs",
+    "sync:cache:cdn": "STOCKCONTEXT_SYNC_VIA_CDN=1 node scripts/sync-stockcontext-ci.mjs"
   },
   "dependencies": {
     "fuse.js": "^7.3.0",
