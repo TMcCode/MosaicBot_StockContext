@@ -8,7 +8,10 @@ export type Manifest = {
   themes_index_url: string;
   stats?: {
     total_tickers?: number;
+    coverage_universe?: number;
+    universe_without_data?: number;
     total_themes?: number;
+    themes_with_data?: number;
   };
   tickers: TickerManifestEntry[];
   themes: ThemeIndexEntry[];
@@ -28,7 +31,9 @@ export type ThemeIndexEntry = {
   slug: string;
   name: string;
   ticker_count: number;
-  meta_url: string;
+  constituents_with_data?: number;
+  has_table_data?: boolean;
+  meta_url?: string | null;
 };
 
 export type TickerMeta = {
@@ -45,6 +50,8 @@ export type ThemeMeta = {
   slug: string;
   name: string;
   ticker_count: number;
+  constituents_with_data?: number;
+  has_table_data?: boolean;
   constituents: ThemeConstituent[];
 };
 
@@ -53,7 +60,8 @@ export type ThemeConstituent = {
   company_name?: string;
   tier?: number;
   portfolio_weight?: number | null;
-  meta_url: string;
+  has_table_data?: boolean;
+  meta_url?: string | null;
 };
 
 export type TablesIndex = {
@@ -106,7 +114,9 @@ export type SearchThemeRow = {
   name: string;
   search_text: string;
   ticker_count?: number;
-  meta_url?: string;
+  constituents_with_data?: number;
+  has_table_data?: boolean;
+  meta_url?: string | null;
 };
 
 export type SearchIndex = {

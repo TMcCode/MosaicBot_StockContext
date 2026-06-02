@@ -17,6 +17,9 @@ export default async function ThemePage({ params }: Props) {
     notFound();
   }
 
+  const withData = meta.constituents.filter((c) => c.has_table_data !== false && c.meta_url);
+  const withoutData = meta.constituents.filter((c) => c.has_table_data === false || !c.meta_url);
+
   return (
     <>
       <p className="muted">
@@ -25,24 +28,35 @@ export default async function ThemePage({ params }: Props) {
         {meta.name}
       </p>
       <h1>{meta.name}</h1>
-      <p className="muted">{meta.ticker_count} tickers in theme</p>
+      <p className="muted">
+        {withData.length} with research notes
+        {withoutData.length > 0 ? ` · ${withoutData.length} pending` : ""}
+      </p>
 
       <section className="card">
         <h2>Constituents</h2>
-        <ul className="grid">
-          {meta.constituents.map((c) => (
-            <li key={c.symbol}>
-              <Link href={tickerHref(c.symbol)}>
-                <strong>{c.symbol}</strong>
-              </Link>
-              {c.company_name ? (
-                <span className="muted"> — {c.company_name}</span>
-              ) : null}
-              {c.portfolio_weight != null && c.portfolio_weight > 0 ? (
-                <span className="muted"> · {(c.portfolio_weight * 100).toFixed(1)}%</span>
-              ) : null}
-            </li>
-          ))}
+        <ul className="grid constituent-list">
+          {meta.constituents.map((c) => {
+            const hasPage = c.has_table_data !== false && c.meta_url;
+            return (
+              <li key={c.symbol} className={hasPage ? undefined : "constituent-muted"}>
+                {hasPage ? (
+                  <Link href={tickerHref(c.symbol)}>
+                    <strong>{c.symbol}</strong>
+                  </Link>
+                ) : (
+                  <strong>{c.symbol}</strong>
+                )}
+                {c.company_name && c.company_name !== c.symbol ? (
+                  <span className="muted"> — {c.company_name}</span>
+                ) : null}
+                {c.portfolio_weight != null && c.portfolio_weight > 0 ? (
+                  <span className="muted"> · {(c.portfolio_weight * 100).toFixed(1)}%</span>
+                ) : null}
+                {!hasPage ? <span className="muted"> · no notes yet</span> : null}
+              </li>
+            );
+          })}
         </ul>
       </section>
     </>

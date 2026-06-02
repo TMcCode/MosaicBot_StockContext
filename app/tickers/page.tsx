@@ -26,8 +26,8 @@ export default function TickersPage() {
         <Link href={href("/")}>Home</Link>
         {" / Tickers"}
       </p>
-      <h1>Coverage universe</h1>
-      <p className="muted">{tickers.length} tickers</p>
+      <h1>Tickers with research</h1>
+      <p className="muted">{tickers.length} tickers with notes or earnings context</p>
       <section className="card">
         <TickerBrowse tickers={tickers} />
       </section>

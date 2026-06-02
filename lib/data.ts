@@ -67,7 +67,9 @@ export function allThemeSlugs(): string[] {
   if (!m?.themes?.length) {
     return [];
   }
-  return m.themes.map((t) => t.slug);
+  return m.themes
+    .filter((t) => t.has_table_data !== false && t.meta_url)
+    .map((t) => t.slug);
 }
 
 export function sitePaths() {

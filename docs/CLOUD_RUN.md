@@ -28,7 +28,7 @@ Scheduler: `./scripts/setup_stockcontext_publish_scheduler.sh`
 
 ## Website
 
-**Not** Cloud Run — **mosaicbot_stockcontext** `deploy-pages.yml` (GitHub Pages).
+**Not** Cloud Run — **mosaicbot_stockcontext** `deploy-pages.yml` (GitHub Pages, **12:30 UTC** daily ≈ 7:30 AM ET after publish).
 
 ## Environment
 

@@ -46,7 +46,7 @@ Run once after jobs are deployed (from MosaicBot repo):
 | **06:00** | `stockcontext-publish-am` | Public JSON publish |
 | **12:00** Mon–Fri | `stockcontext-post-transcript-midday` | Midday transcripts |
 
-**Website:** `deploy-pages.yml` schedule (~**06:45 ET** UTC cron) runs **after** publish so `manifest.v0.json` `as_of` is fresh. Push to `main` always rebuilds.
+**Website:** `deploy-pages.yml` schedule (**12:30 UTC** ≈ 7:30 AM ET) runs **after** the 6 AM publish job finishes. Push to `main` always rebuilds.
 
 ## Nightly order
 
@@ -55,10 +55,16 @@ Run once after jobs are deployed (from MosaicBot repo):
 00:30  post-transcript (night, B)
 03:00  earnings notes
 05:00  theme updates
-06:00  publish stockcontext/ JSON
-06:45  GitHub Pages build (this repo)
+06:00  publish stockcontext/ JSON (~5–25 min incremental)
+07:30  GitHub Pages build (this repo, 12:30 UTC)
 12:00  post-transcript (midday, weekdays)
 ```
+
+## Publish universe (v1)
+
+- **Ticker pages:** any symbol with ≥1 ticker text-table row (~494); tier/weight from portfolio coverage.
+- **Theme index:** all themes in `sym_theme_df` (~874); theme pages only when theme text tables exist.
+- **Pending:** listed gray in UI (`has_table_data: false`), no static page until automation fills tables.
 
 ## Manual runs
 

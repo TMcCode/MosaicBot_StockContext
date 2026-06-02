@@ -23,8 +23,9 @@ export default function HomePage() {
 
   return (
     <>
-      <h1>Stock Context</h1>
-      <p className="muted">Build {manifest.build_id} · {manifest.as_of}</p>
+      <p className="page-intro muted">
+        Portfolio and watchlist earnings context · build {manifest.build_id}
+      </p>
 
       {search ? (
         <section className="card">
@@ -58,14 +59,39 @@ export default function HomePage() {
       ))}
 
       <section className="card">
-        <h2>Themes</h2>
+        <div className="section-header">
+          <h2>Themes</h2>
+          <Link href={href("/themes")} className="section-link">
+            View all {manifest.stats?.total_themes ?? manifest.themes.length} themes →
+          </Link>
+        </div>
+        <p className="muted">
+          {manifest.stats?.themes_with_data ?? manifest.themes.filter((t) => t.meta_url).length}{" "}
+          with research notes
+        </p>
         <ul className="grid grid-2">
-          {manifest.themes.map((theme) => (
-            <li key={theme.slug}>
-              <Link href={themeHref(theme.slug)}>{theme.name}</Link>
-              <span className="muted"> · {theme.ticker_count} tickers</span>
-            </li>
-          ))}
+          {[...manifest.themes]
+            .sort((a, b) => {
+              const aHas = a.has_table_data !== false && a.meta_url ? 0 : 1;
+              const bHas = b.has_table_data !== false && b.meta_url ? 0 : 1;
+              if (aHas !== bHas) return aHas - bHas;
+              return a.name.localeCompare(b.name);
+            })
+            .slice(0, 24)
+            .map((theme) => {
+              const hasPage = theme.has_table_data !== false && theme.meta_url;
+              return (
+                <li key={theme.slug} className={hasPage ? undefined : "constituent-muted"}>
+                  {hasPage ? (
+                    <Link href={themeHref(theme.slug)}>{theme.name}</Link>
+                  ) : (
+                    <span>{theme.name}</span>
+                  )}
+                  <span className="muted"> · {theme.ticker_count} tickers</span>
+                  {!hasPage ? <span className="muted"> · pending</span> : null}
+                </li>
+              );
+            })}
         </ul>
       </section>
     </>

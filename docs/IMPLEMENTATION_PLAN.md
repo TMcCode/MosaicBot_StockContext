@@ -3,7 +3,7 @@
 **Parent spec:** [AUTOMATION_SPEC.md](AUTOMATION_SPEC.md)  
 **Automation code repo:** `MosaicBotMain_Local_Dev` (admin_dashboard)  
 **This repo:** `mosaicbot_stockcontext` (docs + static site)  
-**Last updated:** 2026-06-02 (Phase 4a/4b admin; Phase 5c CI/CD added)
+**Last updated:** 2026-06-02 (Phase 5b/5c live on GitHub Pages; Phase 6 Cloud Run + schedulers deployed)
 
 Step-by-step build playbook. Each phase has objectives, dependencies, task IDs, file paths, acceptance criteria, and out-of-scope items.
 
@@ -306,10 +306,11 @@ flowchart LR
 
 ---
 
-## Phase 4a — Admin automation queue
+## Phase 4a — Admin automation queue ✅
 
 | | |
 |---|---|
+| **Status** | **Complete** |
 | **Parallel with** | Late 2c |
 
 | ID | Task |
@@ -327,7 +328,11 @@ flowchart LR
 
 ---
 
-## Phase 4b — Diagnostics + LLM tile
+## Phase 4b — Diagnostics + LLM tile ✅
+
+| | |
+|---|---|
+| **Status** | **Complete** |
 
 | ID | Task |
 |----|------|
@@ -348,21 +353,27 @@ flowchart LR
 
 | | |
 |---|---|
+| **Status** | **Core complete** (2026-06-02) — 827 tickers, 1279 table bodies, 95 themes on CDN |
 | **Code** | `MosaicBotMain_Local_Dev` — `stockcontext_jobs/publish_stockcontext.py` (standalone Cloud Run job) |
 | **Output** | See [R2_PATHS.md](R2_PATHS.md) |
 
 | ID | Task |
 |----|------|
-| 5a.1 | manifest, search_index, home feeds, **themes/index** ✅ (v0 scaffold) |
-| 5a.2 | Per-ticker meta, chart_1y, financials placeholders; table bodies from GCS text tables ✅ (v0) |
-| 5a.3 | Theme `meta.v0.json` with pre-baked constituents → ticker links ✅ (v0) |
-| 5a.4 | `stockcontext_jobs/` package + `publish_stockcontext.py` job ✅ (v0); chart/financials enrichment next |
-| 5a.5 | `--mode full \| incremental`; wire to Cloud Run ~4 AM + post-midday B |
+| 5a.1 | manifest, search_index, home feeds, **themes/index** ✅ |
+| 5a.2 | Per-ticker meta, table bodies from R2 text tables ✅; chart_1y + financials **placeholders** |
+| 5a.3 | Theme `meta.v0.json` with pre-baked constituents → ticker links ✅ |
+| 5a.4 | `stockcontext_jobs/` package + `publish_stockcontext.py` Cloud Run job ✅ |
+| 5a.5 | `--mode full \| incremental` + `_publish_state.v0.json` fingerprints ✅ |
+| 5a.6 | Cloud Run publish job + **6 AM ET** scheduler ✅ (`stockcontext-publish-job`) |
+| 5a.7 | Chart/financials enrichment from market data | **Deferred** |
+| 5a.8 | Midday incremental publish after post-B | **Deferred** (spec ~4 AM + post-midday B; only 6 AM daily wired) |
+| 5a.9 | Rich home feeds (top movers, watchlist, recent notes) | **Deferred** (v0: 24-ticker “Coverage universe” slice only) |
 
 ### Phase 5a gate
 
-- [ ] Schemas validate; NVDA bundle &lt;100KB without table bodies.
-- [x] Publisher writes `stockcontext/` tree including themes + tickers (v0).
+- [x] NVDA bundle &lt;100KB without table bodies (~3.4 KB verified on CDN).
+- [ ] Automated schema validation in publish CI (schemas exist; jsonschema gate not wired).
+- [x] Publisher writes `stockcontext/` tree including themes + tickers (827 live on CDN).
 
 ---
 
@@ -370,29 +381,36 @@ flowchart LR
 
 | | |
 |---|---|
+| **Status** | **v0 complete, live** — [GitHub Pages](https://tmccode.github.io/MosaicBot_StockContext/) |
 | **Repo** | `mosaicbot_stockcontext` |
-| **Deploy** | Phase [5c](#phase-5c--cicd--github-pages) (not manual upload) |
+| **Deploy** | Phase [5c](#phase-5c--cicd--github-pages) |
 
 | ID | Task |
 |----|------|
-| 5b.1 | Next.js static export (`out/`) ✅ (v0 scaffold) |
-| 5b.2 | Home + `/ticker/[symbol]` + `/theme/[slug]`; tables baked at build from cache ✅ (v0) |
+| 5b.1 | Next.js static export (`out/`) ✅ |
+| 5b.2 | Home + `/ticker/[symbol]` + `/theme/[slug]`; text tables baked from cache ✅ |
 | 5b.3 | Build reads `.cache/stockcontext-public` only (no live CDN in prod) ✅ |
 | 5b.4 | No sign-in v1 ✅ |
 | 5b.5 | `generateStaticParams` from manifest for all ticker/theme pages ✅ |
+| 5b.6 | Search bar (fuse.js + `search_index.v0.json`) ✅ |
+| 5b.7 | `/tickers` browse-all with filter ✅ |
+| 5b.8 | UI polish (stockthemes design, tier badges, table accordions, mobile LCP) | **Deferred** |
 
 ### Phase 5b gate
 
-- [ ] Mobile LCP &lt;2.5s repeat visit.
-- [x] App builds with `npm run build` using baked/synced public JSON (examples seed OK locally).
+- [ ] Mobile LCP &lt;2.5s repeat visit (827 static pages — tune later).
+- [x] App builds with `npm run build` using baked/synced public JSON.
+- [x] Live site shows real manifest (`build_id=20260602T142234`, 827 tickers) not example seed.
 
 ---
 
-## Phase 5c — CI/CD & GitHub Pages
+## Phase 5c — CI/CD & GitHub Pages ✅
 
 | | |
 |---|---|
+| **Status** | **Complete** (2026-06-02) — first full deploy ~16 min (CDN sync + 827 pages) |
 | **Objective** | Push to `main` (and scheduled runs) rebuild the static site and deploy to GitHub Pages — same operational model as **`mosaicbot_stockthemes`**. |
+| **Live URL** | https://tmccode.github.io/MosaicBot_StockContext/ |
 | **Depends on** | Phase 5b (minimal app that builds); Phase 5a (publisher writing `manifest.v0.json` to R2) for meaningful skip-if-unchanged behavior. |
 | **Reference impl** | `mosaicbot_stockthemes/.github/workflows/deploy-pages.yml`, `scripts/ci-should-build.mjs`, `scripts/sync-public-json-ci.mjs` |
 
@@ -434,26 +452,27 @@ flowchart LR
 
 | ID | Task | Deliverable |
 |----|------|-------------|
-| 5c.1 | Enable GitHub Pages | Repo **Settings → Pages → Build and deployment: GitHub Actions** |
-| 5c.2 | Deploy workflow | `.github/workflows/deploy-pages.yml` ✅ (v0) |
-| 5c.3 | Skip unchanged data | `scripts/ci-should-build.mjs` — compare remote `manifest.v0.json` `as_of` (and optional home feed) to `.cache/stockcontext-public/_pages_deploy_meta.json`; skip build on schedule when unchanged; **always build on `push` to `main`** |
-| 5c.4 | R2 sync for CI | `scripts/sync-public-json-ci.mjs` — download `stockcontext/**` from R2 (or CDN) into `.cache/stockcontext-public`; stable Actions cache key (e.g. `stockcontext-public-v1`) |
-| 5c.5 | Deploy meta | `scripts/write-pages-deploy-meta.mjs` — record `as_of` after successful build |
-| 5c.6 | Build env | `DATA_BASE_URL`, `SITE_URL`, `BASE_PATH` (repo vars); disable live browser hydration in production if using Next (see stockthemes `NEXT_PUBLIC_STOCKCONTEXT_DISABLE_LIVE_HYDRATE` or equivalent) |
-| 5c.7 | Secrets | GitHub **Secrets**: `R2_ENDPOINT_URL`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` (read-only list/get on `stockthemes-public/stockcontext/`) |
-| 5c.8 | Permissions | Workflow: `contents: read`, `pages: write`, `id-token: write`; job `environment: github-pages` |
-| 5c.9 | Triggers | `on.push.branches: [main]`; `workflow_dispatch` inputs `force_build`, `refresh_cache`; optional `schedule` after MosaicBot publish window (e.g. daily ~5 AM ET + weekday intraday if incremental publish exists) |
-| 5c.10 | Concurrency | `concurrency.group: pages`, `cancel-in-progress: false` |
-| 5c.11 | Docs | `docs/CI_CD.md` — secrets checklist, first-time setup, troubleshooting |
+| 5c.1 | Enable GitHub Pages | Repo **Settings → Pages → Build and deployment: GitHub Actions** ✅ |
+| 5c.2 | Deploy workflow | `.github/workflows/deploy-pages.yml` ✅ |
+| 5c.3 | Skip unchanged data | `scripts/ci-should-build.mjs` ✅ |
+| 5c.4 | CDN sync for CI | `scripts/sync-stockcontext-ci.mjs` — ETag-aware; full ticker bundles (meta + tables/index + bodies); cache key `stockcontext-public-v4`; `STOCKCONTEXT_SYNC_VIA_CDN=1` in CI ✅ |
+| 5c.5 | Deploy meta | `scripts/write-pages-deploy-meta.mjs` ✅ |
+| 5c.6 | Build env | `NEXT_PUBLIC_BASE_PATH=/MosaicBot_StockContext`, CDN base URL ✅ |
+| 5c.7 | Secrets | GitHub **Secrets**: `R2_*` (optional — CI uses public CDN sync) ✅ |
+| 5c.8 | Permissions | `contents: read`, `pages: write`, `id-token: write`; `environment: github-pages` ✅ |
+| 5c.9 | Triggers | `push` to `main`, daily schedule (~06:45 ET), `workflow_dispatch` + `force_build` ✅ |
+| 5c.10 | Concurrency | `stockcontext-pages`, `cancel-in-progress: false` ✅ |
+| 5c.11 | Docs | `docs/CI_CD.md` ✅ |
+| 5c.12 | Prebuild guard | Do not re-seed examples when cache exists; fail CI on `example-local-001` ✅ |
 
 ### Tasks — `MosaicBotMain_Local_Dev` (publisher deploy)
 
 | ID | Task | Deliverable |
 |----|------|-------------|
 | 5c.12 | Publish job image | `Dockerfile.stockcontext-publish` (or reuse automation image with entrypoint) |
-| 5c.13 | GH Action deploy job | `.github/workflows/deploy-stockcontext-publish.yml` → `stockcontext-publish-job` ✅ (not FetchEODData / not admin) |
-| 5c.14 | Scheduler | Cloud Scheduler triggers publish after `stockcontext-notes` / themes; midday incremental if post-B ran |
-| 5c.15 | Chain order | Document: publish must finish **before** Pages schedule reads new `as_of` (stockthemes uses ~1 AM ETL + ~5 AM Pages; align Stock Context similarly) |
+| 5c.13 | GH Action deploy job | `.github/workflows/deploy-stockcontext-publish.yml` → `stockcontext-publish-job` ✅ |
+| 5c.14 | Publish scheduler | Cloud Scheduler **6 AM ET** → `stockcontext-publish-job` ✅ |
+| 5c.15 | Chain order | Publish 6 AM ET → Pages ~6:45 AM ET (documented in [CLOUD_RUN.md](CLOUD_RUN.md)) ✅ |
 
 ### GitHub configuration checklist
 
@@ -467,11 +486,11 @@ flowchart LR
 
 ### Phase 5c gate
 
-- [ ] Push to `main` on `mosaicbot_stockcontext` triggers Action and updates live GitHub Pages URL.
-- [ ] `workflow_dispatch` with `force_build=true` rebuilds even when `as_of` unchanged.
-- [ ] Scheduled run skips build when `manifest.v0.json` `as_of` matches last deploy meta (log skip reason in Action).
-- [ ] MosaicBot `deploy-stockcontext-publish.yml` deploys Cloud Run publish job; manual `gcloud run jobs execute` produces new `as_of` on CDN.
-- [ ] End-to-end: automation write → publish → Pages deploy shows new ticker content without manual steps.
+- [x] Push to `main` on `mosaicbot_stockcontext` triggers Action and updates live GitHub Pages URL.
+- [x] `workflow_dispatch` with `force_build=true` rebuilds even when `as_of` unchanged.
+- [ ] Scheduled run skips build when `manifest.v0.json` `as_of` matches last deploy meta (verify after first nightly cycle).
+- [x] MosaicBot `deploy-stockcontext-publish.yml` deploys Cloud Run publish job (`6650889`).
+- [ ] End-to-end unattended: automation → publish → Pages (first cycle **2026-06-03** midnight ET).
 
 ### Out of scope (5c v1)
 
@@ -483,21 +502,29 @@ flowchart LR
 
 ## Phase 6 — Cloud Run + schedulers
 
+| | |
+|---|---|
+| **Status** | **Deployed** (2026-06-02) — awaiting first unattended nightly cycle |
+
 See [CLOUD_RUN.md](CLOUD_RUN.md) and [CI_CD.md](CI_CD.md).
 
 | ID | Task | Status |
 |----|------|--------|
-| 6.1 | Automation image + 4 Cloud Run jobs | ✅ `deploy-stockcontext-automation.yml` |
+| 6.1 | Automation image + **5** Cloud Run jobs | ✅ `deploy-stockcontext-automation.yml` (MosaicBot `6650889`) |
 | 6.2 | Publish job | ✅ `deploy-stockcontext-publish.yml` |
-| 6.3 | Cloud Scheduler (midnight / 3a / 5a / noon) | ✅ `setup_stockcontext_automation_schedulers.sh` |
-| 6.4 | Publish scheduler (6 AM ET) | ✅ `setup_stockcontext_publish_scheduler.sh` |
+| 6.3 | Cloud Scheduler (midnight / 00:30 / 3a / 5a / noon ET) | ✅ `setup_stockcontext_automation_schedulers.sh` run locally |
+| 6.4 | Publish scheduler (6 AM ET) | ✅ `setup_stockcontext_publish_scheduler.sh` run locally |
 | 6.5 | GitHub Pages deploy | ✅ `mosaicbot_stockcontext/deploy-pages.yml` |
+
+**Cloud Run jobs (us-central1):** `stockcontext-pre-earnings`, `stockcontext-post-transcript-night`, `stockcontext-post-transcript-midday`, `stockcontext-earnings-notes`, `stockcontext-theme-updates`, `stockcontext-publish-job`.
+
+**Storage:** All object data on **R2** (private `mosaic-themes`, public `stockthemes-public`). GCP used for Cloud Run + Scheduler + Cloud Build only.
 
 ### Phase 6 gate
 
-- [ ] Run deploy workflows on `main` (first image push).
-- [ ] Run scheduler setup scripts once (`gcloud` authenticated).
-- [ ] Staging week: B → C → themes → publish without manual clicks.
+- [x] Run deploy workflows on `main` (first image push).
+- [x] Run scheduler setup scripts once (`gcloud` authenticated).
+- [ ] Staging week: B → C → themes → publish without manual clicks (starts **2026-06-03** midnight ET).
 - [ ] Midday B skipped when queue empty.
 - [ ] Stops at daily Gemini cap (default $20).
 
@@ -508,17 +535,28 @@ See [CLOUD_RUN.md](CLOUD_RUN.md) and [CI_CD.md](CI_CD.md).
 | Phase | Gate |
 |-------|------|
 | 0 | ✅ Schemas + examples + R2 URL locked |
-| 1 | CLI + tests (MosaicBot) |
+| 1 | CLI + tests (MosaicBot) — core libs ✅; formal gate open |
 | 2a | ✅ B auto-approved (NVDA live) |
 | 2b | ✅ T+2 notes (NVDA live) |
 | 2c | ✅ Pre-earnings + queue (PL live) |
 | 3 | ✅ Themes T1+T2 (Composer context + web search) |
-| 4a | Queue UI |
-| 4b | Diagnostics (+ editable daily cap) |
-| 5a | CDN JSON |
-| 5b | Frontend app |
-| 5c | CI/CD → GH Pages |
-| 6 | Crons live (deploy + run scheduler scripts) |
+| 4a | ✅ Queue UI |
+| 4b | ✅ Diagnostics (+ editable daily cap) |
+| 5a | ✅ CDN JSON live (827 tickers); chart/financials + rich feeds deferred |
+| 5b | ✅ Frontend v0 live (search + browse); UI polish deferred |
+| 5c | ✅ CI/CD → GitHub Pages |
+| 6 | ✅ Crons deployed; first unattended night pending |
+
+### Deferred / next
+
+| Item | Phase |
+|------|--------|
+| Chart/financials enrichment + frontend charts | 5a.7 / 5b |
+| Midday incremental publish | 5a.8 |
+| Rich home feed sections (top movers, watchlist, recent notes) | 5a.9 |
+| UI design pass, mobile LCP | 5b.8 |
+| Automated schema validation in publish CI | 5a gate |
+| Verify unattended E2E + skip-if-unchanged Pages | 5c / 6 gates |
 
 ---
 
@@ -527,14 +565,20 @@ See [CLOUD_RUN.md](CLOUD_RUN.md) and [CI_CD.md](CI_CD.md).
 ```
 .github/workflows/
   deploy-pages.yml
+app/
+  page.tsx, layout.tsx, tickers/page.tsx
+  ticker/[symbol]/page.tsx, theme/[slug]/page.tsx
+components/
+  SearchBox.tsx, TickerBrowse.tsx, TableSection.tsx
 scripts/
   ci-should-build.mjs
-  sync-public-json-ci.mjs
+  sync-stockcontext-ci.mjs      # CDN/R2 sync; ticker bundle walk
   write-pages-deploy-meta.mjs
+lib/
+  data.ts, links.ts, types.ts
 docs/
   CI_CD.md
-# App (Phase 5b): package.json, src/, public/, etc.
-.cache/stockcontext-public/   # CI only — gitignored
+.cache/stockcontext-public/   # CI + local dev — gitignored
 ```
 
 ## New files (MosaicBotMain_Local_Dev)
@@ -544,6 +588,7 @@ stockcontext_jobs/                 # Standalone Cloud Run jobs (NOT admin UI, NO
   README.md
   publisher.py
   publish_stockcontext.py
+  run_pre_earnings.py
   run_post_transcript.py
   run_earnings_notes.py
   run_theme_updates.py
@@ -556,31 +601,18 @@ cloudbuild-stockcontext-automation.yaml
 cloudbuild-stockcontext-publish.yaml
 scripts/setup_stockcontext_automation_schedulers.sh
 scripts/setup_stockcontext_publish_scheduler.sh
-admin_dashboard/                   # Automation logic (Cloud Run entrypoints in stockcontext_jobs/)
-  config_automation.py
-  automation/
-    run_pre_earnings.py
-    run_post_earnings.py
-    run_earnings_notes.py
-    run_theme_updates.py
-  utils/
-    portfolio_watchlist_universe.py
-    earnings_automation_calendar.py
-    earnings_automation_state.py
-    earnings_automation_queue.py
-    automation_budget.py
-    pre_earnings_table_policy.py
-  tools/
-    automation_queue.py
-    automation_diagnostics.py
-  scripts/
-    print_automation_universe.py
-    print_automation_queue.py
-tests/admin_dashboard/
-  test_portfolio_watchlist_universe.py
-  test_notes_eligible_date.py
-  test_queue_ranker.py
-  test_pre_earnings_table_policy.py
+scripts/publish_stockcontext.py    # CLI wrapper
+admin_dashboard/tools/             # Phase 4a/4b (Automation Ops)
+  automation_queue.py
+  automation_ops.py
+  automation_diagnostics.py
+admin_dashboard/utils/
+  automation_admin_actions.py
+  automation_config_store.py
+  automation_diagnostics.py
+  automation_queue_overrides.py
+tests/stockcontext_jobs/
+  test_publisher.py
 ```
 
 ---
@@ -610,6 +642,7 @@ tests/admin_dashboard/
 | `DATA_BASE_URL` | `https://storage.stockthemes.ai/stockcontext/` | CDN prefix for runtime + build |
 | `SITE_URL` | `https://{org}.github.io/stockcontext/` | Canonical site URL (or custom domain) |
 | `BASE_PATH` | `/stockcontext/` or `/` | GH Pages subpath if not apex domain |
-| `STOCKCONTEXT_SYNC_VIA_R2` | `1` | CI: sync JSON from R2 vs GCS |
+| `STOCKCONTEXT_SYNC_VIA_CDN` | `1` | Local/CI: sync public JSON from CDN (no R2 secrets) |
+| `STOCKCONTEXT_SYNC_VIA_R2` | `1` | CI alt: sync via R2 API |
 | `STOCKCONTEXT_BUILD_CACHE` | `1` | Use `.cache/stockcontext-public` during build |
 | `STOCKCONTEXT_STATIC_PAGES` | `1` | Static export mode (Next/Vite) |

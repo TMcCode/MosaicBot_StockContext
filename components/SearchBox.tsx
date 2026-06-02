@@ -72,12 +72,24 @@ export function SearchBox({
                   ) : null}
                 </li>
               ) : (
-                <li key={`th-${row.slug}`}>
-                  <Link href={themeHref(row.slug)}>
+                <li
+                  key={`th-${row.slug}`}
+                  className={
+                    row.has_table_data === false || !row.meta_url ? "constituent-muted" : undefined
+                  }
+                >
+                  {row.has_table_data !== false && row.meta_url ? (
+                    <Link href={themeHref(row.slug)}>
+                      <strong>{row.name}</strong>
+                    </Link>
+                  ) : (
                     <strong>{row.name}</strong>
-                  </Link>
+                  )}
                   {row.ticker_count != null ? (
                     <span className="muted"> · {row.ticker_count} tickers</span>
+                  ) : null}
+                  {row.has_table_data === false || !row.meta_url ? (
+                    <span className="muted"> · no theme notes yet</span>
                   ) : null}
                 </li>
               ),

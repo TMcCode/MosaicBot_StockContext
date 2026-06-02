@@ -3,12 +3,14 @@ import { notFound } from "next/navigation";
 
 import {
   allTickerSymbols,
+  loadManifest,
   loadTableBody,
   loadTickerMeta,
   loadTickerTablesIndex,
 } from "@/lib/data";
 import { href } from "@/lib/links";
 import { TableSection } from "@/components/TableSection";
+import { TickerHeader } from "@/components/TickerHeader";
 
 export function generateStaticParams() {
   return allTickerSymbols().map((symbol) => ({ symbol }));
@@ -23,6 +25,7 @@ export default async function TickerPage({ params }: Props) {
   if (!meta) {
     notFound();
   }
+  const manifest = loadManifest();
   const index = loadTickerTablesIndex(symbol);
 
   const tables = (index?.tables ?? [])
@@ -35,26 +38,14 @@ export default async function TickerPage({ params }: Props) {
 
   return (
     <>
-      <p className="muted">
+      <nav className="breadcrumb muted">
         <Link href={href("/")}>Home</Link>
-        {" / "}
-        {symbol}
-      </p>
-      <h1>
-        {symbol}
-        {meta.company_name && meta.company_name !== symbol ? (
-          <span className="muted" style={{ fontWeight: 400, fontSize: "1rem" }}>
-            {" "}
-            — {meta.company_name}
-          </span>
-        ) : null}
-      </h1>
-      {meta.primary_theme ? (
-        <p className="muted">Primary theme: {meta.primary_theme}</p>
-      ) : null}
-      {meta.themes?.length ? (
-        <p className="muted">Themes: {meta.themes.join(" · ")}</p>
-      ) : null}
+        <span aria-hidden="true"> / </span>
+        <Link href={href("/tickers")}>Tickers</Link>
+        <span aria-hidden="true"> / </span>
+        <span>{symbol}</span>
+      </nav>
+      <TickerHeader symbol={symbol} meta={meta} manifest={manifest} />
 
       {tables.length === 0 ? (
         <section className="card">

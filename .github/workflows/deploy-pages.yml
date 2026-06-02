@@ -4,9 +4,9 @@ name: Deploy Stock Context to GitHub Pages
 on:
   push:
     branches: [main]
-  # ~06:45 AM ET (after MosaicBot publish ~06:00 ET). UTC only; adjust seasonally if needed.
+  # 12:30 UTC ≈ 7:30 AM ET (EST) / 8:30 AM EDT — after 6 AM publish (typical 5–25 min).
   schedule:
-    - cron: "45 10 * * *"
+    - cron: "30 12 * * *"
   workflow_dispatch:
     inputs:
       force_build:
