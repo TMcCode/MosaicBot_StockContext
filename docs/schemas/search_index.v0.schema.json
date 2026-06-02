@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://stockcontext.ai/schemas/search_index.v0.json",
+  "title": "stockcontext search index v0",
+  "description": "Deterministic search/browse payload for Stock Context home search.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "as_of", "tickers"],
+  "properties": {
+    "schema_version": { "type": "integer", "const": 0 },
+    "as_of": { "type": "string", "minLength": 1 },
+    "build_id": { "type": "string" },
+    "tickers": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/tickerRow" }
+    }
+  },
+  "$defs": {
+    "tickerRow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["symbol", "search_text"],
+      "properties": {
+        "symbol": { "type": "string", "minLength": 1 },
+        "name": { "type": "string" },
+        "company_name": { "type": "string" },
+        "search_text": {
+          "type": "string",
+          "description": "Lowercase concatenation for client filter"
+        },
+        "tier": { "type": "integer", "enum": [1, 2, 3] },
+        "theme_names": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "meta_url": { "type": "string" }
+      }
+    }
+  }
+}

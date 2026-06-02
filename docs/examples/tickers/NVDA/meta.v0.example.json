@@ -1,0 +1,19 @@
+{
+  "schema_version": 0,
+  "symbol": "NVDA",
+  "as_of": "2026-06-01T12:00:00Z",
+  "build_id": "example-local-001",
+  "company_name": "NVIDIA Corporation",
+  "exchange": "NASDAQ",
+  "tier": 1,
+  "portfolio_weight": 0.04,
+  "primary_theme": "AI '26: Midstream AI Materials",
+  "themes": ["AI '26: Midstream AI Materials"],
+  "next_earnings_date": "2026-08-20",
+  "last_earnings_date": "2026-05-22",
+  "earnings_timing": "AMC",
+  "last_updated_at": "2026-05-28T08:00:00Z",
+  "chart_url": "tickers/NVDA/chart_1y.v0.json",
+  "financials_url": "tickers/NVDA/financials.v0.json",
+  "tables_index_url": "tickers/NVDA/tables/index.v0.json"
+}

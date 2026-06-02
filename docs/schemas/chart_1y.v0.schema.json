@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://stockcontext.ai/schemas/chart_1y.v0.json",
+  "title": "stockcontext 1Y chart v0",
+  "description": "Indexed price series for ticker page chart (1 year default window).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "symbol", "as_of", "window", "series"],
+  "properties": {
+    "schema_version": { "type": "integer", "const": 0 },
+    "symbol": { "type": "string", "minLength": 1 },
+    "as_of": { "type": "string", "minLength": 1 },
+    "build_id": { "type": "string" },
+    "window": {
+      "type": "string",
+      "const": "1y",
+      "description": "Default display window; may include longer series in future"
+    },
+    "currency": { "type": "string", "default": "USD" },
+    "series": {
+      "type": "object",
+      "required": ["dates", "values"],
+      "additionalProperties": false,
+      "properties": {
+        "source": { "type": "string" },
+        "dates": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 10 }
+        },
+        "values": {
+          "type": "array",
+          "items": { "type": "number" },
+          "description": "Indexed level (100 = start) or adj price per product choice"
+        },
+        "spy_values": {
+          "type": "array",
+          "items": { "type": "number" },
+          "description": "Optional SPY overlay, same length as values"
+        }
+      }
+    }
+  }
+}

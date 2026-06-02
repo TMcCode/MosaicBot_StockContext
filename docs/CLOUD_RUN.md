@@ -1,0 +1,44 @@
+# Cloud Run — Stock Context
+
+Jobs live in **MosaicBotMain_Local_Dev** (`stockcontext_jobs/`). Deploy via GitHub Actions; schedule via Cloud Scheduler scripts.
+
+See [CI_CD.md](CI_CD.md) for the full matrix.
+
+## Automation jobs (one image, four jobs)
+
+| Cloud Run job | Scheduler (ET) | Module |
+|---------------|----------------|--------|
+| `stockcontext-pre-earnings` | 00:00 daily | `stockcontext_jobs.run_pre_earnings` |
+| `stockcontext-post-transcript-night` | 00:30 daily | `stockcontext_jobs.run_post_transcript` |
+| `stockcontext-earnings-notes` | 03:00 daily | `stockcontext_jobs.run_earnings_notes` |
+| `stockcontext-theme-updates` | 05:00 daily | `stockcontext_jobs.run_theme_updates` |
+| `stockcontext-post-transcript-midday` | 12:00 Mon–Fri | `…run_post_transcript --midday` |
+
+Deploy: `.github/workflows/deploy-stockcontext-automation.yml`  
+Schedulers: `./scripts/setup_stockcontext_automation_schedulers.sh`
+
+## Publish job
+
+| Cloud Run job | Scheduler (ET) | Module |
+|---------------|----------------|--------|
+| `stockcontext-publish-job` | 06:00 daily | `stockcontext_jobs.publish_stockcontext` |
+
+Deploy: `.github/workflows/deploy-stockcontext-publish.yml`  
+Scheduler: `./scripts/setup_stockcontext_publish_scheduler.sh`
+
+## Website
+
+**Not** Cloud Run — **mosaicbot_stockcontext** `deploy-pages.yml` (GitHub Pages).
+
+## Environment
+
+- `AUTOMATION_DRY_RUN=0` in production jobs
+- R2: `R2_*`, `MOSAIC_THEMES_BUCKET=mosaic-themes`
+- LLM: `GEMINI_API_KEY`, `OPENAI_API_KEY`
+- Transcripts: `FMP_API_KEY`, `MOSAIC_TRANSCRIPTS_BUCKET=mosaic-transcripts`
+
+Staging: set `AUTOMATION_DRY_RUN=1` on a one-off execute or use `--dry-run` locally.
+
+## Logging
+
+Structured fields: `run_id`, `job`, `slot`, `tickers_planned`, `tickers_done`, `spend_usd`, `errors[]`.

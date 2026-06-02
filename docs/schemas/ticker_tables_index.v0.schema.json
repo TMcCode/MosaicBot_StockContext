@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://stockcontext.ai/schemas/ticker_tables_index.v0.json",
+  "title": "stockcontext ticker tables index v0",
+  "description": "Metadata for text tables; bodies loaded lazily from separate JSON files.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "symbol", "as_of", "tables"],
+  "properties": {
+    "schema_version": { "type": "integer", "const": 0 },
+    "symbol": { "type": "string", "minLength": 1 },
+    "as_of": { "type": "string", "minLength": 1 },
+    "build_id": { "type": "string" },
+    "tables": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/tableEntry" }
+    }
+  },
+  "$defs": {
+    "tableEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["slug", "display_name", "body_url"],
+      "properties": {
+        "slug": {
+          "type": "string",
+          "minLength": 1,
+          "description": "URL-safe id, e.g. overview, bull-bear-details"
+        },
+        "display_name": { "type": "string", "minLength": 1 },
+        "gcs_table": {
+          "type": "string",
+          "description": "Source parquet name, e.g. Ticker_Overview"
+        },
+        "format": {
+          "type": "string",
+          "enum": ["single_row", "multi_row"]
+        },
+        "has_data": { "type": "boolean" },
+        "updated_at": { "type": ["string", "null"] },
+        "status": {
+          "type": "string",
+          "enum": ["ready", "pending", "empty"],
+          "description": "pending = automation staging not yet promoted to read view"
+        },
+        "preview": {
+          "type": "string",
+          "description": "Optional one-line preview for accordion header"
+        },
+        "body_url": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Relative path to table body JSON"
+        }
+      }
+    }
+  }
+}

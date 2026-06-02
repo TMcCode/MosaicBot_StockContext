@@ -1,0 +1,57 @@
+{
+  "schema_version": 0,
+  "symbol": "NVDA",
+  "as_of": "2026-06-01T12:00:00Z",
+  "build_id": "example-local-001",
+  "performance": {
+    "title": "Stock Performance",
+    "columns": ["Ticker", "1D", "5D", "10D", "1M", "3M", "YTD", "1Y"],
+    "rows": [
+      {
+        "Ticker": "NVDA",
+        "1D": 1.2,
+        "5D": 3.4,
+        "10D": 8.4,
+        "1M": 12.1,
+        "3M": 18.5,
+        "YTD": 22.0,
+        "1Y": 52.3
+      }
+    ]
+  },
+  "revenue": {
+    "title": "Revenue Summary",
+    "columns": ["Ticker", "TTM Revenue Δ", "NTM Revenue Δ", "Revenue Est Analysts"],
+    "rows": [
+      {
+        "Ticker": "NVDA",
+        "TTM Revenue Δ": 65.2,
+        "NTM Revenue Δ": 28.4,
+        "Revenue Est Analysts": 42
+      }
+    ]
+  },
+  "revisions": {
+    "title": "Revenue Revisions",
+    "columns": ["Period", "Prior YoY", "Current YoY", "Revision bps"],
+    "rows": [
+      {
+        "Period": "FY26 Q2",
+        "Prior YoY": 42.0,
+        "Current YoY": 45.5,
+        "Revision bps": 350
+      }
+    ]
+  },
+  "downstream": {
+    "title": "Downstream Summary",
+    "columns": ["Ticker", "Gross Margin", "Operating Margin"],
+    "rows": [
+      {
+        "Ticker": "NVDA",
+        "Gross Margin": 75.2,
+        "Operating Margin": 62.1
+      }
+    ]
+  }
+}

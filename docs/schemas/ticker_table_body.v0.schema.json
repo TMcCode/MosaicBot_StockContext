@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://stockcontext.ai/schemas/ticker_table_body.v0.json",
+  "title": "stockcontext ticker table body v0",
+  "description": "Full text table payload loaded on accordion expand.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "symbol", "slug", "as_of", "format", "columns", "rows"],
+  "properties": {
+    "schema_version": { "type": "integer", "const": 0 },
+    "symbol": { "type": "string", "minLength": 1 },
+    "slug": { "type": "string", "minLength": 1 },
+    "display_name": { "type": "string" },
+    "gcs_table": { "type": "string" },
+    "as_of": { "type": "string", "minLength": 1 },
+    "format": { "type": "string", "enum": ["single_row", "multi_row"] },
+    "columns": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/column" }
+    },
+    "rows": {
+      "type": "array",
+      "items": { "type": "object", "additionalProperties": true }
+    }
+  },
+  "$defs": {
+    "column": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "label"],
+      "properties": {
+        "id": { "type": "string" },
+        "label": { "type": "string" },
+        "kind": {
+          "type": "string",
+          "enum": ["text", "number", "date", "markdown"],
+          "default": "text"
+        },
+        "hidden": {
+          "type": "boolean",
+          "description": "Metadata columns (source, updated_by) collapsed in UI"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "schema_version": 0,
+  "symbol": "NVDA",
+  "slug": "overview",
+  "display_name": "Overview",
+  "gcs_table": "Ticker_Overview",
+  "as_of": "2026-06-01T12:00:00Z",
+  "format": "single_row",
+  "columns": [
+    { "id": "ticker", "label": "Ticker", "kind": "text" },
+    { "id": "thesis", "label": "Thesis", "kind": "markdown" },
+    { "id": "thesis_update", "label": "Updated", "kind": "date" },
+    { "id": "source", "label": "Source", "kind": "text", "hidden": true }
+  ],
+  "rows": [
+    {
+      "ticker": "NVDA",
+      "thesis": "NVIDIA remains the primary beneficiary of accelerated computing and AI infrastructure buildout. Datacenter GPUs and networking drive the bulk of upside; investor focus is on supply execution and China/export rules.",
+      "thesis_update": "2026-05-15",
+      "source": "automation"
+    }
+  ]
+}

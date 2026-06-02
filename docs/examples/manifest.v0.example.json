@@ -1,0 +1,44 @@
+{
+  "schema_version": 0,
+  "as_of": "2026-06-01T12:00:00Z",
+  "build_id": "example-local-001",
+  "data_base_url": "https://storage.stockthemes.ai/stockcontext/",
+  "search_index_url": "search_index.v0.json",
+  "home_feeds_url": "feeds/home.v0.json",
+  "themes_index_url": "themes/index.v0.json",
+  "focus_list_url": null,
+  "stats": {
+    "total_tickers": 2,
+    "portfolio_tickers": 1,
+    "watchlist_tickers": 2,
+    "total_themes": 1
+  },
+  "themes": [
+    {
+      "slug": "ai-26-midstream-ai-materials",
+      "name": "AI '26: Midstream AI Materials",
+      "ticker_count": 1,
+      "meta_url": "themes/ai-26-midstream-ai-materials/meta.v0.json"
+    }
+  ],
+  "tickers": [
+    {
+      "symbol": "NVDA",
+      "name": "NVDA",
+      "company_name": "NVIDIA Corporation",
+      "tier": 1,
+      "portfolio_weight": 0.04,
+      "meta_url": "tickers/NVDA/meta.v0.json",
+      "last_updated_at": "2026-05-28T08:00:00Z"
+    },
+    {
+      "symbol": "LLY",
+      "name": "LLY",
+      "company_name": "Eli Lilly and Company",
+      "tier": 1,
+      "portfolio_weight": 0.03,
+      "meta_url": "tickers/LLY/meta.v0.json",
+      "last_updated_at": "2026-05-20T08:00:00Z"
+    }
+  ]
+}

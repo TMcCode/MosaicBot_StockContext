@@ -1,0 +1,61 @@
+{
+  "schema_version": 0,
+  "as_of": "2026-06-01T12:00:00Z",
+  "build_id": "example-local-001",
+  "sections": [
+    {
+      "id": "top_abs_10d",
+      "title": "Top absolute 10D moves",
+      "items": [
+        {
+          "symbol": "NVDA",
+          "label": "NVDA",
+          "sublabel": "NVIDIA Corporation",
+          "badge": null,
+          "metric": 8.4,
+          "event_at": "2026-06-01T12:00:00Z",
+          "meta_url": "tickers/NVDA/meta.v0.json"
+        }
+      ]
+    },
+    {
+      "id": "watchlist_by_update",
+      "title": "Watchlist by update date",
+      "items": [
+        {
+          "symbol": "NVDA",
+          "label": "NVDA",
+          "sublabel": "Updated May 28",
+          "badge": "ready",
+          "metric": null,
+          "event_at": "2026-05-28T08:00:00Z",
+          "meta_url": "tickers/NVDA/meta.v0.json"
+        },
+        {
+          "symbol": "LLY",
+          "label": "LLY",
+          "sublabel": "Updated May 20",
+          "badge": "ready",
+          "metric": null,
+          "event_at": "2026-05-20T08:00:00Z",
+          "meta_url": "tickers/LLY/meta.v0.json"
+        }
+      ]
+    },
+    {
+      "id": "recent_transcripts_notes",
+      "title": "Recently updated transcripts & notes",
+      "items": [
+        {
+          "symbol": "NVDA",
+          "label": "NVDA earnings note",
+          "sublabel": "T+2 reaction + transcript",
+          "badge": "ready",
+          "metric": null,
+          "event_at": "2026-05-29T11:00:00Z",
+          "meta_url": "tickers/NVDA/meta.v0.json"
+        }
+      ]
+    }
+  ]
+}

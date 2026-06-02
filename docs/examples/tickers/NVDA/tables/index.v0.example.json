@@ -1,0 +1,63 @@
+{
+  "schema_version": 0,
+  "symbol": "NVDA",
+  "as_of": "2026-06-01T12:00:00Z",
+  "build_id": "example-local-001",
+  "tables": [
+    {
+      "slug": "overview",
+      "display_name": "Overview",
+      "gcs_table": "Ticker_Overview",
+      "format": "single_row",
+      "has_data": true,
+      "updated_at": "2026-05-15T10:00:00Z",
+      "status": "ready",
+      "preview": "Leading AI accelerator vendor…",
+      "body_url": "tickers/NVDA/tables/overview.v0.json"
+    },
+    {
+      "slug": "bull-bear-details",
+      "display_name": "Bull / Bear Details",
+      "gcs_table": "Ticker_BullBearDetails",
+      "format": "single_row",
+      "has_data": true,
+      "updated_at": "2026-05-10T10:00:00Z",
+      "status": "ready",
+      "preview": "Bull: datacenter demand…",
+      "body_url": "tickers/NVDA/tables/bull-bear-details.v0.json"
+    },
+    {
+      "slug": "notes",
+      "display_name": "Notes",
+      "gcs_table": "Ticker_Notes",
+      "format": "multi_row",
+      "has_data": true,
+      "updated_at": "2026-05-29T11:00:00Z",
+      "status": "ready",
+      "preview": "Q1 FY26: beat and raise…",
+      "body_url": "tickers/NVDA/tables/notes.v0.json"
+    },
+    {
+      "slug": "earnings-results",
+      "display_name": "Earnings Results",
+      "gcs_table": "Ticker_EarningsResults",
+      "format": "multi_row",
+      "has_data": true,
+      "updated_at": "2026-05-24T10:00:00Z",
+      "status": "ready",
+      "preview": "Revenue vs threshold: hit",
+      "body_url": "tickers/NVDA/tables/earnings-results.v0.json"
+    },
+    {
+      "slug": "rerating-thresholds",
+      "display_name": "Rerating Thresholds",
+      "gcs_table": "Ticker_ReratingThresholds",
+      "format": "multi_row",
+      "has_data": true,
+      "updated_at": "2026-05-01T10:00:00Z",
+      "status": "ready",
+      "preview": "3 metrics for Q2",
+      "body_url": "tickers/NVDA/tables/rerating-thresholds.v0.json"
+    }
+  ]
+}

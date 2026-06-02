@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://stockcontext.ai/schemas/ticker_financials.v0.json",
+  "title": "stockcontext ticker financials v0",
+  "description": "Stock Lens tables: performance, revenue, revisions, downstream (from MosaicBot ETL snapshots).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "symbol", "as_of"],
+  "properties": {
+    "schema_version": { "type": "integer", "const": 0 },
+    "symbol": { "type": "string", "minLength": 1 },
+    "as_of": { "type": "string", "minLength": 1 },
+    "build_id": { "type": "string" },
+    "performance": { "$ref": "#/$defs/metricTable" },
+    "revenue": { "$ref": "#/$defs/metricTable" },
+    "revisions": { "$ref": "#/$defs/metricTable" },
+    "downstream": { "$ref": "#/$defs/metricTable" }
+  },
+  "$defs": {
+    "metricTable": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["columns", "rows"],
+      "properties": {
+        "title": { "type": "string" },
+        "columns": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "rows": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      }
+    }
+  }
+}

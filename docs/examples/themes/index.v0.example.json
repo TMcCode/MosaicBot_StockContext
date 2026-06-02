@@ -1,0 +1,13 @@
+{
+  "schema_version": 0,
+  "as_of": "2026-06-01T12:00:00Z",
+  "build_id": "example-local-001",
+  "themes": [
+    {
+      "slug": "ai-26-midstream-ai-materials",
+      "name": "AI '26: Midstream AI Materials",
+      "ticker_count": 1,
+      "meta_url": "themes/ai-26-midstream-ai-materials/meta.v0.json"
+    }
+  ]
+}

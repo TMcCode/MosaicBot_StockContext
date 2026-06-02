@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://stockcontext.ai/schemas/manifest.v0.json",
+  "title": "stockcontext manifest v0",
+  "description": "Site index for MosaicBot Stock Context (GitHub Pages). Publisher: stockcontext_jobs/publish_stockcontext.py (Cloud Run) → stockthemes-public/stockcontext/",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "as_of", "data_base_url", "tickers"],
+  "properties": {
+    "schema_version": { "type": "integer", "const": 0 },
+    "as_of": {
+      "type": "string",
+      "description": "ISO 8601 instant when manifest was built",
+      "minLength": 1
+    },
+    "build_id": {
+      "type": "string",
+      "description": "ETL run id, git sha, or timestamp slug",
+      "minLength": 1
+    },
+    "data_base_url": {
+      "type": "string",
+      "format": "uri",
+      "description": "Public CDN root with trailing slash, e.g. https://storage.stockthemes.ai/stockcontext/"
+    },
+    "search_index_url": {
+      "type": "string",
+      "description": "Relative to data_base_url",
+      "default": "search_index.v0.json"
+    },
+    "home_feeds_url": {
+      "type": "string",
+      "description": "Relative to data_base_url",
+      "default": "feeds/home.v0.json"
+    },
+    "focus_list_url": {
+      "type": ["string", "null"],
+      "description": "Optional v1.1 manual focus list"
+    },
+    "stats": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "total_tickers": { "type": "integer", "minimum": 0 },
+        "portfolio_tickers": { "type": "integer", "minimum": 0 },
+        "watchlist_tickers": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "tickers": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/tickerEntry" }
+    }
+  },
+  "$defs": {
+    "tickerEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["symbol", "meta_url"],
+      "properties": {
+        "symbol": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Uppercase ticker, URL segment /ticker/[symbol]"
+        },
+        "name": { "type": "string" },
+        "company_name": { "type": "string" },
+        "tier": {
+          "type": "integer",
+          "enum": [1, 2, 3],
+          "description": "1=portfolio line, 2=portfolio-theme, 3=watchlist-only"
+        },
+        "portfolio_weight": {
+          "type": ["number", "null"],
+          "minimum": 0,
+          "description": "Weight from Portfolio tab if line item"
+        },
+        "meta_url": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Relative path, e.g. tickers/NVDA/meta.v0.json"
+        },
+        "last_updated_at": {
+          "type": "string",
+          "description": "ISO 8601 — max of text table / note updates"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "schema_version": 0,
+  "slug": "ai-26-midstream-ai-materials",
+  "name": "AI '26: Midstream AI Materials",
+  "as_of": "2026-06-01T12:00:00Z",
+  "build_id": "example-local-001",
+  "ticker_count": 1,
+  "constituents": [
+    {
+      "symbol": "NVDA",
+      "company_name": "NVIDIA Corporation",
+      "tier": 1,
+      "portfolio_weight": 0.04,
+      "meta_url": "tickers/NVDA/meta.v0.json"
+    }
+  ]
+}

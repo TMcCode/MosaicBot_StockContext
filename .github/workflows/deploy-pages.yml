@@ -1,0 +1,98 @@
+# Build Next.js static export and deploy to GitHub Pages (stockcontext JSON from R2 cache).
+name: Deploy Stock Context to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  # ~06:45 AM ET (after MosaicBot publish ~06:00 ET). UTC only; adjust seasonally if needed.
+  schedule:
+    - cron: "45 10 * * *"
+  workflow_dispatch:
+    inputs:
+      force_build:
+        description: "Rebuild even if manifest.as_of unchanged"
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: stockcontext-pages
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      should_build: ${{ steps.check.outputs.should_build }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: .cache/stockcontext-public
+          key: stockcontext-public-v1
+          restore-keys: stockcontext-public-v1
+      - name: Decide if build is needed
+        id: check
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          FORCE_BUILD: ${{ github.event.inputs.force_build }}
+          R2_ENDPOINT_URL: ${{ secrets.R2_ENDPOINT_URL }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          STOCKTHEMES_SYNC_VIA_R2: "1"
+        run: node scripts/ci-should-build.mjs
+
+  build:
+    needs: check
+    if: needs.check.outputs.should_build == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - uses: actions/cache@v4
+        with:
+          path: .cache/stockcontext-public
+          key: stockcontext-public-v1
+          restore-keys: stockcontext-public-v1
+      - run: npm ci
+      - name: Sync public JSON from R2
+        env:
+          R2_ENDPOINT_URL: ${{ secrets.R2_ENDPOINT_URL }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          STOCKTHEMES_SYNC_VIA_R2: "1"
+        run: node scripts/sync-stockcontext-ci.mjs
+      - name: Build static export
+        env:
+          NEXT_PUBLIC_BASE_PATH: ${{ vars.NEXT_PUBLIC_BASE_PATH }}
+          NEXT_PUBLIC_DATA_BASE_URL: ${{ vars.NEXT_PUBLIC_DATA_BASE_URL }}
+        run: npm run build && node scripts/write-pages-deploy-meta.mjs
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: out
+
+  deploy:
+    needs: [check, build]
+    if: needs.check.outputs.should_build == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+  skip_notice:
+    needs: check
+    if: needs.check.outputs.should_build != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Pages deploy skipped — manifest as_of unchanged (use force_build to rebuild)"

@@ -1,0 +1,25 @@
+{
+  "schema_version": 0,
+  "as_of": "2026-06-01T12:00:00Z",
+  "build_id": "example-local-001",
+  "tickers": [
+    {
+      "symbol": "NVDA",
+      "name": "NVDA",
+      "company_name": "NVIDIA Corporation",
+      "search_text": "nvda nvidia corporation ai '26 midstream ai materials",
+      "tier": 1,
+      "theme_names": ["AI '26: Midstream AI Materials"],
+      "meta_url": "tickers/NVDA/meta.v0.json"
+    },
+    {
+      "symbol": "LLY",
+      "name": "LLY",
+      "company_name": "Eli Lilly and Company",
+      "search_text": "lly eli lilly glp-1 long '24 glp1 drug producer",
+      "tier": 1,
+      "theme_names": ["GLP-1 Long '24: GLP1 Drug Producer"],
+      "meta_url": "tickers/LLY/meta.v0.json"
+    }
+  ]
+}
