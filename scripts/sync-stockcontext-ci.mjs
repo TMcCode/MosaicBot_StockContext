@@ -139,12 +139,24 @@ function seedFromExamples(meta) {
   console.log("sync-stockcontext-ci: seeded .cache from docs/examples (dev fallback)");
 }
 
+/** Only sync known stockcontext JSON paths — ignore prose in previews/notes (e.g. "y/y", "$3.425B"). */
+function isSyncAssetPath(value) {
+  if (typeof value !== "string" || value.startsWith("http")) return false;
+  const rel = value.replace(/^\//, "");
+  if (!rel.endsWith(".json")) return false;
+  return (
+    rel === "manifest.v0.json" ||
+    rel === "search_index.v0.json" ||
+    rel.startsWith("feeds/") ||
+    rel.startsWith("themes/") ||
+    rel.startsWith("tickers/")
+  );
+}
+
 function collectUrls(obj, out = new Set()) {
   if (obj == null) return out;
-  if (typeof obj === "string" && (obj.endsWith(".json") || obj.includes("/"))) {
-    if (!obj.startsWith("http") && obj.includes(".")) {
-      out.add(obj.replace(/^\//, ""));
-    }
+  if (typeof obj === "string" && isSyncAssetPath(obj)) {
+    out.add(obj.replace(/^\//, ""));
   }
   if (Array.isArray(obj)) {
     for (const x of obj) collectUrls(x, out);
