@@ -72,8 +72,9 @@ jobs:
         run: node scripts/sync-stockcontext-ci.mjs
       - name: Build static export
         env:
-          NEXT_PUBLIC_BASE_PATH: ${{ vars.NEXT_PUBLIC_BASE_PATH }}
-          NEXT_PUBLIC_DATA_BASE_URL: ${{ vars.NEXT_PUBLIC_DATA_BASE_URL }}
+          # Required for https://tmccode.github.io/MosaicBot_StockContext/ (override via repo variable)
+          NEXT_PUBLIC_BASE_PATH: ${{ vars.NEXT_PUBLIC_BASE_PATH || '/MosaicBot_StockContext' }}
+          NEXT_PUBLIC_DATA_BASE_URL: ${{ vars.NEXT_PUBLIC_DATA_BASE_URL || 'https://storage.stockthemes.ai/stockcontext/' }}
         run: npm run build && node scripts/write-pages-deploy-meta.mjs
       - uses: actions/upload-pages-artifact@v3
         with:

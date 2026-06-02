@@ -49,5 +49,5 @@ python -m stockcontext_jobs.publish_stockcontext   # same entrypoint as Cloud Ru
 | Variable | Purpose |
 |----------|---------|
 | `DATA_BASE_URL` | `https://storage.stockthemes.ai/stockcontext/` |
-| `NEXT_PUBLIC_BASE_PATH` | GitHub Pages subpath, e.g. `/mosaicbot_stockcontext` |
+| `NEXT_PUBLIC_BASE_PATH` | **`/MosaicBot_StockContext`** (must match repo name; workflow defaults this if unset) |
 | R2 secrets (CI) | Same as stockthemes — prefix `stockcontext/` |
