@@ -40,7 +40,7 @@ Run once after jobs are deployed (from MosaicBot repo):
 | Local time | Scheduler id | Cloud Run job |
 |------------|--------------|---------------|
 | **00:00** | `stockcontext-pre-earnings` | Pre-earnings (Process A) |
-| **00:30** | `stockcontext-post-transcript-night` | Night transcripts (Process B) |
+| **00:10** | `stockcontext-post-transcript-night` | Night transcripts (Process B) |
 | **03:00** | `stockcontext-earnings-notes` | Ticker_Notes (Process C) |
 | **05:00** | `stockcontext-theme-updates` | Theme T1/T2 |
 | **02:00** | `stockcontext-publish-early` | Incremental publish after pre-earnings + night B |
@@ -53,7 +53,7 @@ Run once after jobs are deployed (from MosaicBot repo):
 
 ```text
 00:00  pre-earnings (A)
-00:30  post-transcript (night, B)
+00:10  post-transcript (night, B)
 02:00  publish stockcontext/ JSON (early — A+B batch visible on site)
 02:30  GitHub Pages build (early, UTC crons 06:30 + 07:30)
 03:00  earnings notes

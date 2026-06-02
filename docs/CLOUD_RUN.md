@@ -9,7 +9,7 @@ See [CI_CD.md](CI_CD.md) for the full matrix.
 | Cloud Run job | Scheduler (ET) | Module |
 |---------------|----------------|--------|
 | `stockcontext-pre-earnings` | 00:00 daily | `stockcontext_jobs.run_pre_earnings` |
-| `stockcontext-post-transcript-night` | 00:30 daily | `stockcontext_jobs.run_post_transcript` |
+| `stockcontext-post-transcript-night` | 00:10 daily | `stockcontext_jobs.run_post_transcript` |
 | `stockcontext-earnings-notes` | 03:00 daily | `stockcontext_jobs.run_earnings_notes` |
 | `stockcontext-theme-updates` | 05:00 daily | `stockcontext_jobs.run_theme_updates` |
 | `stockcontext-post-transcript-midday` | 12:00 Mon–Fri | `…run_post_transcript --midday` |
