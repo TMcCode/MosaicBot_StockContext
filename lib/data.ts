@@ -4,6 +4,7 @@ import path from "path";
 import type {
   HomeFeeds,
   Manifest,
+  SearchIndex,
   TableBody,
   TablesIndex,
   ThemeMeta,
@@ -31,6 +32,10 @@ export function loadManifest(): Manifest | null {
 
 export function loadHomeFeeds(): HomeFeeds | null {
   return readJson<HomeFeeds>("feeds/home.v0.json");
+}
+
+export function loadSearchIndex(): SearchIndex | null {
+  return readJson<SearchIndex>("search_index.v0.json");
 }
 
 export function loadTickerMeta(symbol: string): TickerMeta | null {

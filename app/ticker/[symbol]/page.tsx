@@ -18,14 +18,14 @@ type Props = { params: Promise<{ symbol: string }> };
 
 export default async function TickerPage({ params }: Props) {
   const { symbol: raw } = await params;
-  const symbol = raw.toUpperCase();
+  const symbol = decodeURIComponent(raw).toUpperCase();
   const meta = loadTickerMeta(symbol);
-  const index = loadTickerTablesIndex(symbol);
-  if (!meta || !index) {
+  if (!meta) {
     notFound();
   }
+  const index = loadTickerTablesIndex(symbol);
 
-  const tables = (index.tables ?? [])
+  const tables = (index?.tables ?? [])
     .filter((t) => t.has_data && t.body_url)
     .map((t) => ({
       entry: t,
@@ -42,7 +42,7 @@ export default async function TickerPage({ params }: Props) {
       </p>
       <h1>
         {symbol}
-        {meta.company_name ? (
+        {meta.company_name && meta.company_name !== symbol ? (
           <span className="muted" style={{ fontWeight: 400, fontSize: "1rem" }}>
             {" "}
             — {meta.company_name}
@@ -54,6 +54,12 @@ export default async function TickerPage({ params }: Props) {
       ) : null}
       {meta.themes?.length ? (
         <p className="muted">Themes: {meta.themes.join(" · ")}</p>
+      ) : null}
+
+      {tables.length === 0 ? (
+        <section className="card">
+          <p className="muted">No table data published for this ticker yet.</p>
+        </section>
       ) : null}
 
       {tables.map(({ entry, body }) =>

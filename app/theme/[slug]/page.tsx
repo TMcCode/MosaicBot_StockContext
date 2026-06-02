@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { allThemeSlugs, loadThemeMeta } from "@/lib/data";
-import { href } from "@/lib/links";
+import { href, tickerHref } from "@/lib/links";
 
 export function generateStaticParams() {
   return allThemeSlugs().map((slug) => ({ slug }));
@@ -32,7 +32,7 @@ export default async function ThemePage({ params }: Props) {
         <ul className="grid">
           {meta.constituents.map((c) => (
             <li key={c.symbol}>
-              <Link href={href(`/ticker/${c.symbol}`)}>
+              <Link href={tickerHref(c.symbol)}>
                 <strong>{c.symbol}</strong>
               </Link>
               {c.company_name ? (

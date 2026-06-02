@@ -71,6 +71,67 @@ td {
   vertical-align: top;
 }
 
+.search-input {
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 1rem;
+}
+
+.search-input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.search-results {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+}
+
+.search-results li {
+  padding: 0.35rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.search-results li:last-child {
+  border-bottom: none;
+}
+
+.section-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.section-header h2 {
+  margin: 0;
+}
+
+.section-link {
+  font-size: 0.875rem;
+}
+
+.browse-count {
+  margin: 0.75rem 0;
+}
+
+.ticker-browse-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ticker-browse-list li {
+  padding: 0.25rem 0;
+}
+
 .nav {
   display: flex;
   gap: 1rem;

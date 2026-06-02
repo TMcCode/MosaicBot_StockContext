@@ -90,3 +90,29 @@ export type HomeFeeds = {
     }[];
   }[];
 };
+
+export type SearchTickerRow = {
+  symbol: string;
+  name?: string;
+  company_name?: string;
+  search_text: string;
+  tier?: number;
+  theme_names?: string[];
+  meta_url?: string;
+};
+
+export type SearchThemeRow = {
+  slug: string;
+  name: string;
+  search_text: string;
+  ticker_count?: number;
+  meta_url?: string;
+};
+
+export type SearchIndex = {
+  schema_version: number;
+  as_of: string;
+  build_id: string;
+  tickers: SearchTickerRow[];
+  themes?: SearchThemeRow[];
+};

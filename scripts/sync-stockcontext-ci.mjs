@@ -154,6 +154,45 @@ function collectUrls(obj, out = new Set()) {
   return out;
 }
 
+async function downloadMany(relativePaths, meta) {
+  let downloaded = 0;
+  for (const rel of relativePaths) {
+    if (rel.startsWith("http")) continue;
+    try {
+      if (await downloadRelative(rel, meta)) downloaded += 1;
+    } catch (e) {
+      console.warn(`skip ${rel}: ${e?.message || e}`);
+    }
+  }
+  return downloaded;
+}
+
+/** After meta files exist, pull tables/index, chart, financials, and table bodies. */
+async function syncTickerBundles(meta) {
+  const tickersDir = path.join(CACHE, "tickers");
+  if (!fs.existsSync(tickersDir)) return 0;
+
+  let downloaded = 0;
+  const bundleUrls = new Set();
+  for (const sym of fs.readdirSync(tickersDir)) {
+    const metaPath = path.join(tickersDir, sym, "meta.v0.json");
+    if (fs.existsSync(metaPath)) {
+      collectUrls(JSON.parse(fs.readFileSync(metaPath, "utf8")), bundleUrls);
+    }
+  }
+  downloaded += await downloadMany(bundleUrls, meta);
+
+  const bodyUrls = new Set();
+  for (const sym of fs.readdirSync(tickersDir)) {
+    const indexPath = path.join(tickersDir, sym, "tables", "index.v0.json");
+    if (fs.existsSync(indexPath)) {
+      collectUrls(JSON.parse(fs.readFileSync(indexPath, "utf8")), bodyUrls);
+    }
+  }
+  downloaded += await downloadMany(bodyUrls, meta);
+  return downloaded;
+}
+
 async function main() {
   fs.mkdirSync(CACHE, { recursive: true });
   const meta = loadMeta();
@@ -190,6 +229,7 @@ async function main() {
         console.warn(`skip ${rel}: ${e?.message || e}`);
       }
     }
+    downloaded += await syncTickerBundles(meta);
     const label = cdnSyncEnabled() ? "CDN" : "R2";
     console.log(`sync-stockcontext-ci: ${label} sync done (${downloaded} files updated)`);
   } else {

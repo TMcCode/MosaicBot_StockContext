@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { href } from "@/lib/links";
+import { href, themeHref, tickerHref } from "@/lib/links";
 import { loadManifest } from "@/lib/data";
 
 import "./globals.css";
@@ -19,6 +19,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <main>
           <nav className="nav">
             <Link href={href("/")}>Home</Link>
+            <Link href={href("/tickers")}>Tickers</Link>
             {manifest ? (
               <span className="muted">
                 {manifest.stats?.total_tickers ?? manifest.tickers.length} tickers ·{" "}

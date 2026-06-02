@@ -5,5 +5,14 @@
  */
 export function href(path: string): string {
   if (!path || path === "/") return "/";
-  return path.startsWith("/") ? path : `/${path}`;
+  const p = path.startsWith("/") ? path : `/${path}`;
+  return p.endsWith("/") ? p : `${p}/`;
+}
+
+export function tickerHref(symbol: string): string {
+  return href(`/ticker/${encodeURIComponent(symbol.toUpperCase())}`);
+}
+
+export function themeHref(slug: string): string {
+  return href(`/theme/${slug}`);
 }
