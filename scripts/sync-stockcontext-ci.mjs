@@ -150,9 +150,23 @@ async function main() {
   }
 
   saveMeta(meta);
-  if (!fs.existsSync(path.join(CACHE, "manifest.v0.json"))) {
+  const manifestPath = path.join(CACHE, "manifest.v0.json");
+  if (!fs.existsSync(manifestPath)) {
     console.error("::error::No manifest in cache — set R2 secrets or add examples");
     process.exit(1);
+  }
+  if (r2SyncEnabled()) {
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+    if (manifest.build_id === "example-local-001") {
+      console.error(
+        "::error::manifest still example-local-001 — stale cache or R2 sync failed; use cache key v2+",
+      );
+      process.exit(1);
+    }
+    const total = manifest.stats?.total_tickers ?? manifest.tickers?.length ?? 0;
+    console.log(
+      `sync-stockcontext-ci: manifest build_id=${manifest.build_id} tickers=${total} themes=${manifest.stats?.total_themes ?? manifest.themes?.length ?? 0}`,
+    );
   }
 }
 

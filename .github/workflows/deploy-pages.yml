@@ -34,8 +34,8 @@ jobs:
       - uses: actions/cache@v4
         with:
           path: .cache/stockcontext-public
-          key: stockcontext-public-v1
-          restore-keys: stockcontext-public-v1
+          key: stockcontext-public-v2
+          restore-keys: stockcontext-public-v2
       - name: Decide if build is needed
         id: check
         env:
@@ -60,8 +60,8 @@ jobs:
       - uses: actions/cache@v4
         with:
           path: .cache/stockcontext-public
-          key: stockcontext-public-v1
-          restore-keys: stockcontext-public-v1
+          key: stockcontext-public-v2
+          restore-keys: stockcontext-public-v2
       - run: npm ci
       - name: Sync public JSON from R2
         env:
