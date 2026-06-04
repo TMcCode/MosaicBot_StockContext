@@ -316,6 +316,27 @@ async function main() {
       `sync-stockcontext-ci: manifest build_id=${manifest.build_id} tickers=${total} themes=${manifest.stats?.total_themes ?? manifest.themes?.length ?? 0}`,
     );
   }
+
+  const homePath = path.join(CACHE, "feeds/home.v0.json");
+  if (fs.existsSync(homePath)) {
+    const home = JSON.parse(fs.readFileSync(homePath, "utf8"));
+    const sectionIds = (home.sections || []).map((s) => s?.id).filter(Boolean);
+    const legacyUniverseOnly =
+      sectionIds.length === 1 && sectionIds[0] === "universe";
+    if (legacyUniverseOnly) {
+      console.error(
+        "::error::feeds/home.v0.json is legacy (single universe panel). Publish feeds from MosaicBot first, then re-run Pages deploy (or bump stockcontext-public cache key).",
+      );
+      process.exit(1);
+    }
+    if (!sectionIds.includes("watchlist_themes")) {
+      console.error(
+        `::error::feeds/home.v0.json missing 8-panel home feed (got: ${sectionIds.join(", ") || "none"})`,
+      );
+      process.exit(1);
+    }
+    console.log(`sync-stockcontext-ci: home feed ok (${sectionIds.length} sections)`);
+  }
 }
 
 main().catch((e) => {
