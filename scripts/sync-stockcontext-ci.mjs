@@ -179,6 +179,29 @@ async function downloadMany(relativePaths, meta) {
   return downloaded;
 }
 
+function copySearchIndexToPublic() {
+  const dest = path.join(root, "public", "search_index.v0.json");
+  if (process.env.CI === "true") {
+    if (fs.existsSync(dest)) {
+      fs.unlinkSync(dest);
+      console.log("sync-stockcontext-ci: removed public/search_index.v0.json (CDN-first)");
+    } else {
+      console.log(
+        "sync-stockcontext-ci: skip public/search_index.v0.json (browser fetches CDN first)",
+      );
+    }
+    return;
+  }
+  const src = path.join(CACHE, "search_index.v0.json");
+  if (!fs.existsSync(src)) {
+    return;
+  }
+  const destDir = path.join(root, "public");
+  fs.mkdirSync(destDir, { recursive: true });
+  fs.copyFileSync(src, dest);
+  console.log("sync-stockcontext-ci: copied search_index.v0.json → public/ (local fallback)");
+}
+
 /** After meta files exist, pull tables/index, chart, financials, and table bodies. */
 async function syncTickerBundles(meta) {
   const tickersDir = path.join(CACHE, "tickers");
@@ -224,11 +247,30 @@ async function main() {
     }
     const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
     const urls = collectUrls(manifest);
-    for (const key of ["search_index.v0.json", "feeds/home.v0.json", "themes/index.v0.json"]) {
+    for (const key of [
+      "search_index.v0.json",
+      "feeds/home.v0.json",
+      "feeds/recent_updates_marquee.v0.json",
+      "themes/index.v0.json",
+    ]) {
       urls.add(key);
     }
-    for (const key of ["search_index.v0.json", "feeds/home.v0.json", "themes/index.v0.json"]) {
+    for (const key of [
+      "search_index.v0.json",
+      "feeds/home.v0.json",
+      "feeds/recent_updates_marquee.v0.json",
+      "themes/index.v0.json",
+    ]) {
       await downloadRelative(key, meta);
+    }
+    const homePath = path.join(CACHE, "feeds/home.v0.json");
+    if (fs.existsSync(homePath)) {
+      const home = JSON.parse(fs.readFileSync(homePath, "utf8"));
+      for (const section of home.sections || []) {
+        if (section?.id) {
+          urls.add(`feeds/sections/${section.id}.v0.json`);
+        }
+      }
     }
     if (fs.existsSync(path.join(CACHE, "search_index.v0.json"))) {
       collectUrls(JSON.parse(fs.readFileSync(path.join(CACHE, "search_index.v0.json"), "utf8")), urls);
@@ -254,6 +296,7 @@ async function main() {
   }
 
   saveMeta(meta);
+  copySearchIndexToPublic();
   const manifestPath = path.join(CACHE, "manifest.v0.json");
   if (!fs.existsSync(manifestPath)) {
     console.error("::error::No manifest in cache — set R2 secrets, STOCKCONTEXT_SYNC_VIA_CDN=1, or add examples");

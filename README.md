@@ -33,6 +33,14 @@ npm run sync:cache    # R2 sync, or seeds docs/examples into .cache/stockcontext
 npm run dev
 ```
 
+After publishing feeds locally from MosaicBot, prefer disk over CDN:
+
+```bash
+STOCKCONTEXT_DEV_LOCAL_FIRST=1 npm run dev
+```
+
+Table bodies load on the **server** from `.cache` (see `TableSection`) — compatible with `output: export` (no API routes).
+
 Production builds read **only** `.cache/stockcontext-public` (no browser CDN fetches) — same egress model as [mosaicbot_stockthemes](https://github.com/).
 
 ## Publish data (MosaicBot)

@@ -27,7 +27,16 @@
             "focus_list",
             "top_abs_10d",
             "watchlist_by_update",
-            "recent_transcripts_notes"
+            "recent_transcripts_notes",
+            "watchlist_themes",
+            "portfolio_themes",
+            "recently_reported",
+            "upcoming_earnings",
+            "theme_10d_outperformers",
+            "theme_10d_underperformers",
+            "ticker_10d_outperformers",
+            "ticker_10d_underperformers",
+            "universe"
           ]
         },
         "title": { "type": "string", "minLength": 1 },

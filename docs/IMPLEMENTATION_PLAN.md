@@ -301,7 +301,7 @@ flowchart LR
 ### Phase 3 gate
 
 - [x] 6th event theme queued with tier priority (`theme_event` overflow queue).
-- [x] T2 never picks port/watchlist theme names.
+- [x] T2 vintage cadence (`'26`/`'25` 180d, `'24`/`'23` 360d, 4+ yr retired); excludes port/watchlist; 4-ticker/90d burst override.
 - [x] Quarter dedup in Theme_Notes prompt context.
 
 ---
@@ -632,7 +632,7 @@ tests/stockcontext_jobs/
 | `AUTOMATION_POST_PARALLEL` | `3` | Concurrent post |
 | `AUTOMATION_STALE_TABLE_DAYS` | `150` | 5-month rule |
 | `AUTOMATION_TRANSCRIPT_MAX_AGE_DAYS` | `30` | Abandon B |
-| `AUTOMATION_THEME_ROTATION_DAYS` | `180` | T2 eligibility |
+| `AUTOMATION_THEME_ROTATION_DAYS` | `180` | Legacy env (T2 uses vintage policy in code) |
 | `AUTOMATION_DRY_RUN` | `0` | Plan only |
 
 ### Stock Context site (Phase 5b / 5c — `mosaicbot_stockcontext`)

@@ -5,6 +5,7 @@ export type Manifest = {
   data_base_url: string;
   search_index_url: string;
   home_feeds_url: string;
+  recent_updates_marquee_url?: string;
   themes_index_url: string;
   stats?: {
     total_tickers?: number;
@@ -44,6 +45,8 @@ export type TickerMeta = {
   primary_theme?: string | null;
   themes?: string[];
   tables_index_url: string;
+  chart_url?: string;
+  financials_url?: string;
 };
 
 export type ThemeMeta = {
@@ -52,7 +55,19 @@ export type ThemeMeta = {
   ticker_count: number;
   constituents_with_data?: number;
   has_table_data?: boolean;
+  tables_index_url?: string;
+  as_of?: string;
+  build_id?: string;
+  last_updated_at?: string;
   constituents: ThemeConstituent[];
+};
+
+export type ThemeTablesIndex = {
+  slug: string;
+  name?: string;
+  build_id?: string;
+  as_of?: string;
+  tables: TableIndexEntry[];
 };
 
 export type ThemeConstituent = {
@@ -66,6 +81,7 @@ export type ThemeConstituent = {
 
 export type TablesIndex = {
   symbol: string;
+  build_id?: string;
   tables: TableIndexEntry[];
 };
 
@@ -86,6 +102,23 @@ export type TableBody = {
   rows: Record<string, string>[];
 };
 
+export type RecentUpdatesMarqueeItem = {
+  symbol: string;
+  label: string;
+  sublabel?: string;
+  updated_at: string;
+  meta_url?: string;
+};
+
+export type RecentUpdatesMarquee = {
+  schema_version: number;
+  as_of: string;
+  build_id?: string;
+  lookback_days: number;
+  ticker_rows: RecentUpdatesMarqueeItem[];
+  theme_rows: RecentUpdatesMarqueeItem[];
+};
+
 export type HomeFeeds = {
   sections: {
     id: string;
@@ -94,7 +127,10 @@ export type HomeFeeds = {
       symbol: string;
       label: string;
       sublabel?: string;
-      meta_url: string;
+      badge?: string | null;
+      metric?: number | null;
+      event_at?: string | null;
+      meta_url?: string;
     }[];
   }[];
 };
@@ -103,7 +139,8 @@ export type SearchTickerRow = {
   symbol: string;
   name?: string;
   company_name?: string;
-  search_text: string;
+  /** @deprecated Legacy publish field; fuse text built client-side. */
+  search_text?: string;
   tier?: number;
   theme_names?: string[];
   meta_url?: string;
@@ -112,7 +149,8 @@ export type SearchTickerRow = {
 export type SearchThemeRow = {
   slug: string;
   name: string;
-  search_text: string;
+  /** @deprecated Legacy publish field; fuse text built client-side. */
+  search_text?: string;
   ticker_count?: number;
   constituents_with_data?: number;
   has_table_data?: boolean;

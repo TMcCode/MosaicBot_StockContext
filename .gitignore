@@ -2,6 +2,7 @@ node_modules/
 .next/
 out/
 .cache/
+public/search_index.v0.json
 .env
 .env.local
 *.log

@@ -4,14 +4,16 @@ import { ThemeBrowse } from "@/components/ThemeBrowse";
 import { loadManifest } from "@/lib/data";
 import { href } from "@/lib/links";
 
-export default function ThemesPage() {
-  const manifest = loadManifest();
+export default async function ThemesPage() {
+  const manifest = await loadManifest();
 
   if (!manifest?.themes?.length) {
     return (
       <div className="card">
         <h1>Themes</h1>
-        <p className="muted">No theme index in cache. Run npm run sync:cache:cdn.</p>
+        <p className="muted">
+          No theme index loaded. Republish and reload, or run <code>npm run sync:cache:feeds</code>.
+        </p>
       </div>
     );
   }

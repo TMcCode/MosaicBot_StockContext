@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://stockcontext.ai/schemas/search_index.v0.json",
   "title": "stockcontext search index v0",
-  "description": "Deterministic search/browse payload for Stock Context home search.",
+  "description": "Deterministic search/browse payload for Stock Context. Client fuse text is built from symbol, company_name, theme_names, slug, and name — search_text is deprecated legacy.",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema_version", "as_of", "tickers"],
@@ -13,20 +13,43 @@
     "tickers": {
       "type": "array",
       "items": { "$ref": "#/$defs/tickerRow" }
+    },
+    "themes": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/themeRow" }
     }
   },
   "$defs": {
+    "themeRow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["slug", "name"],
+      "properties": {
+        "slug": { "type": "string", "minLength": 1 },
+        "name": { "type": "string" },
+        "search_text": {
+          "type": "string",
+          "deprecated": true,
+          "description": "Legacy; omit on publish. Client uses slug + name."
+        },
+        "ticker_count": { "type": "integer" },
+        "constituents_with_data": { "type": "integer" },
+        "has_table_data": { "type": "boolean" },
+        "meta_url": { "type": ["string", "null"] }
+      }
+    },
     "tickerRow": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["symbol", "search_text"],
+      "required": ["symbol"],
       "properties": {
         "symbol": { "type": "string", "minLength": 1 },
         "name": { "type": "string" },
         "company_name": { "type": "string" },
         "search_text": {
           "type": "string",
-          "description": "Lowercase concatenation for client filter"
+          "deprecated": true,
+          "description": "Legacy; omit on publish. Client uses symbol, company_name, theme_names."
         },
         "tier": { "type": "integer", "enum": [1, 2, 3] },
         "theme_names": {

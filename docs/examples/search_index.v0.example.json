@@ -7,7 +7,6 @@
       "symbol": "NVDA",
       "name": "NVDA",
       "company_name": "NVIDIA Corporation",
-      "search_text": "nvda nvidia corporation ai '26 midstream ai materials",
       "tier": 1,
       "theme_names": ["AI '26: Midstream AI Materials"],
       "meta_url": "tickers/NVDA/meta.v0.json"
@@ -16,10 +15,19 @@
       "symbol": "LLY",
       "name": "LLY",
       "company_name": "Eli Lilly and Company",
-      "search_text": "lly eli lilly glp-1 long '24 glp1 drug producer",
       "tier": 1,
       "theme_names": ["GLP-1 Long '24: GLP1 Drug Producer"],
       "meta_url": "tickers/LLY/meta.v0.json"
+    }
+  ],
+  "themes": [
+    {
+      "slug": "ai-26-midstream-ai-materials",
+      "name": "AI '26: Midstream AI Materials",
+      "ticker_count": 12,
+      "constituents_with_data": 1,
+      "has_table_data": true,
+      "meta_url": "themes/ai-26-midstream-ai-materials/meta.v0.json"
     }
   ]
 }

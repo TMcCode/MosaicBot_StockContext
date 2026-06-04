@@ -31,6 +31,10 @@ Scheduler: `./scripts/setup_stockcontext_publish_scheduler.sh`
 
 **Not** Cloud Run — **mosaicbot_stockcontext** `deploy-pages.yml` (GitHub Pages, **12:30 UTC** daily ≈ 7:30 AM ET after publish).
 
+## Resources
+
+Automation jobs use **32Gi / 8 CPU** until validated after the memory fix below. They set `MARKET_PERF_SKIP_REALTIME_SNAPSHOT=1` and read **ETL snapshots** (`ticker_metrics_with_ntm_latest.parquet`, `recent_earnings_latest.parquet`, `etf_data_latest.parquet`) instead of `last_realtime_data_latest.parquet`.
+
 ## Environment
 
 - `AUTOMATION_DRY_RUN=0` in production jobs

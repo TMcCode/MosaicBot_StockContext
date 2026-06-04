@@ -1,8 +1,16 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { allThemeSlugs, loadThemeMeta } from "@/lib/data";
+import { TableSection } from "@/components/TableSection";
+import { TierBadge } from "@/components/TierBadge";
+import {
+  allThemeSlugs,
+  loadTableBody,
+  loadThemeMeta,
+  loadThemeTablesIndex,
+} from "@/lib/data";
 import { href, tickerHref } from "@/lib/links";
+import { formatDateOnly } from "@/lib/tableDisplay";
 
 export function generateStaticParams() {
   return allThemeSlugs().map((slug) => ({ slug }));
@@ -12,11 +20,24 @@ type Props = { params: Promise<{ slug: string }> };
 
 export default async function ThemePage({ params }: Props) {
   const { slug } = await params;
-  const meta = loadThemeMeta(slug);
+  const [meta, tablesIndex] = await Promise.all([
+    loadThemeMeta(slug),
+    loadThemeTablesIndex(slug),
+  ]);
   if (!meta) {
     notFound();
   }
 
+  const tableEntries = (tablesIndex?.tables ?? []).filter((t) => t.has_data && t.body_url);
+  const buildId = tablesIndex?.build_id;
+  const overviewEntry = tableEntries.find((t) => t.slug === "overview");
+  let lastUpdated = formatDateOnly(meta.last_updated_at);
+  if (overviewEntry?.body_url) {
+    const overviewBody = await loadTableBody(overviewEntry.body_url, buildId);
+    const row = overviewBody?.rows[0];
+    const fromOverview = formatDateOnly(row?.LastUpdated ?? row?.last_updated);
+    if (fromOverview) lastUpdated = fromOverview;
+  }
   const withData = meta.constituents.filter((c) => c.has_table_data !== false && c.meta_url);
   const withoutData = meta.constituents.filter((c) => c.has_table_data === false || !c.meta_url);
 
@@ -25,13 +46,45 @@ export default async function ThemePage({ params }: Props) {
       <p className="muted">
         <Link href={href("/")}>Home</Link>
         {" / "}
+        <Link href={href("/themes")}>Themes</Link>
+        {" / "}
         {meta.name}
       </p>
-      <h1>{meta.name}</h1>
+      <div className="theme-page-header">
+        <h1>{meta.name}</h1>
+        {lastUpdated ? (
+          <p className="theme-last-updated muted">
+            <span className="theme-last-updated-label">Last updated</span>
+            <time dateTime={lastUpdated}>{lastUpdated}</time>
+          </p>
+        ) : null}
+      </div>
       <p className="muted">
         {withData.length} with research notes
         {withoutData.length > 0 ? ` · ${withoutData.length} pending` : ""}
       </p>
+
+      {tableEntries.length === 0 ? (
+        <section className="card">
+          <p className="muted">
+            Theme text tables are not in your local/CDN bundle yet (marquee only means rows
+            exist in R2 — each theme still needs a publish). Run:{" "}
+            <code>
+              python -m stockcontext_jobs.publish_stockcontext --themes-only --theme-slug {slug}
+            </code>{" "}
+            or <code>--themes-only</code> without <code>--theme-slug</code> for all themes.
+          </p>
+        </section>
+      ) : (
+        tableEntries.map((entry, i) => (
+          <TableSection
+            key={entry.slug}
+            entry={entry}
+            buildId={buildId}
+            defaultOpen={i === 0}
+          />
+        ))
+      )}
 
       <section className="card">
         <h2>Constituents</h2>
@@ -39,19 +92,24 @@ export default async function ThemePage({ params }: Props) {
           {meta.constituents.map((c) => {
             const hasPage = c.has_table_data !== false && c.meta_url;
             return (
-              <li key={c.symbol} className={hasPage ? undefined : "constituent-muted"}>
-                {hasPage ? (
-                  <Link href={tickerHref(c.symbol)}>
+              <li key={c.symbol} className={hasPage ? "browse-row" : "browse-row constituent-muted"}>
+                <div className="browse-row-primary">
+                  {hasPage ? (
+                    <Link href={tickerHref(c.symbol)}>
+                      <strong>{c.symbol}</strong>
+                    </Link>
+                  ) : (
                     <strong>{c.symbol}</strong>
-                  </Link>
-                ) : (
-                  <strong>{c.symbol}</strong>
-                )}
+                  )}
+                  <TierBadge tier={c.tier} />
+                  {c.portfolio_weight != null && c.portfolio_weight > 0 ? (
+                    <span className="badge badge-weight">
+                      {(c.portfolio_weight * 100).toFixed(1)}%
+                    </span>
+                  ) : null}
+                </div>
                 {c.company_name && c.company_name !== c.symbol ? (
                   <span className="muted"> — {c.company_name}</span>
-                ) : null}
-                {c.portfolio_weight != null && c.portfolio_weight > 0 ? (
-                  <span className="muted"> · {(c.portfolio_weight * 100).toFixed(1)}%</span>
                 ) : null}
                 {!hasPage ? <span className="muted"> · no notes yet</span> : null}
               </li>

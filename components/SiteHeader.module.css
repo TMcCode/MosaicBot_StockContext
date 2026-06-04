@@ -1,0 +1,114 @@
+.wrap {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 18px 24px 0;
+  font-family: var(--font-geist-sans, Arial, Helvetica, sans-serif);
+  font-size: 14px;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+  width: 100%;
+  padding: 0 0 14px;
+  border-bottom: 1px solid var(--nav-border);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--nav-fg);
+  text-decoration: none;
+}
+
+.brand:hover {
+  color: var(--nav-accent);
+  text-decoration: none;
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  margin-left: auto;
+}
+
+.links a {
+  color: var(--nav-muted);
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.links a:hover {
+  color: var(--nav-accent);
+  text-decoration: none;
+}
+
+.stats {
+  color: var(--nav-muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.themeToggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 32px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--nav-border);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--nav-muted);
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.themeToggle:hover {
+  color: var(--nav-accent);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(38, 252, 214, 0.35);
+}
+
+.themeToggle:focus-visible {
+  outline: 2px solid var(--nav-accent);
+  outline-offset: 2px;
+}
+
+:global(.st-theme[data-theme="light"]) .themeToggle {
+  background: rgba(0, 0, 0, 0.03);
+  border-color: rgba(0, 0, 0, 0.12);
+}
+
+:global(.st-theme[data-theme="light"]) .themeToggle:hover {
+  background: rgba(59, 77, 161, 0.08);
+  border-color: rgba(59, 77, 161, 0.28);
+  color: var(--nav-accent);
+}
+
+@media (max-width: 720px) {
+  .wrap {
+    padding: 12px 12px 0;
+  }
+
+  .row {
+    padding: 0 0 12px;
+  }
+
+  .stats {
+    width: 100%;
+    order: 4;
+  }
+}

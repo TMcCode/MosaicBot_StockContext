@@ -10,15 +10,26 @@ export function isFooterColumn(id: string): boolean {
   return id === "Source" || isMetaColumn(id);
 }
 
+/** Turn HiringTrendWatchpoints / forum_watchlist into spaced title case. */
+export function humanizeColumnId(id: string): string {
+  return id
+    .replace(/_/g, " ")
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replace(/([A-Z]+)([A-Z][a-z])/g, "$1 $2")
+    .replace(/([a-zA-Z])(\d)/g, "$1 $2")
+    .replace(/(\d)([a-zA-Z])/g, "$1 $2")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 export function formatColumnLabel(id: string, label: string): string {
   if (label && label.toLowerCase() !== id.toLowerCase()) {
     return label;
   }
   if (/^Bull\d$/i.test(id)) return `Bull case ${id.replace(/\D/g, "")}`;
   if (/^Bear\d$/i.test(id)) return `Bear case ${id.replace(/\D/g, "")}`;
-  return id
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+  return humanizeColumnId(id);
 }
 
 export function visibleDataColumns(body: TableBody) {
@@ -42,9 +53,33 @@ export function primaryMarkdownColumn(body: TableBody) {
   return body.columns.find((c) => c.kind === "markdown" && !isFooterColumn(c.id));
 }
 
+/** ISO or "YYYY-MM-DD HH:MM:SS…" → date-only for display. */
+export function formatDateOnly(value: string | undefined | null): string {
+  const v = value?.trim() ?? "";
+  if (!v) return "";
+  if (/^\d{4}-\d{2}-\d{2}/.test(v)) return v.slice(0, 10);
+  const parsed = Date.parse(v);
+  if (!Number.isNaN(parsed)) {
+    return new Date(parsed).toISOString().slice(0, 10);
+  }
+  return v.split(/\s/)[0] ?? v;
+}
+
+export function isOverviewMetaColumn(id: string): boolean {
+  return isFooterColumn(id) || /^lastupdated$/i.test(id) || id === "last_updated";
+}
+
 export function formatCellValue(id: string, val: string): string {
   const v = val?.trim() ?? "";
-  if (id.toLowerCase().includes("date") && v.includes("00:00:00")) {
+  if (
+    id.toLowerCase().includes("date") ||
+    /^lastupdated$/i.test(id) ||
+    id === "last_updated"
+  ) {
+    const dateOnly = formatDateOnly(v);
+    if (dateOnly) return dateOnly;
+  }
+  if (v.includes("00:00:00")) {
     return v.replace(/\s00:00:00$/, "");
   }
   return v;

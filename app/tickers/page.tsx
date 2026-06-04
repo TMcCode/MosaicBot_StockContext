@@ -1,24 +1,12 @@
 import Link from "next/link";
 
 import { TickerBrowse } from "@/components/TickerBrowse";
-import { loadSearchIndex } from "@/lib/data";
+import { loadManifest } from "@/lib/data";
 import { href } from "@/lib/links";
 
-export default function TickersPage() {
-  const search = loadSearchIndex();
-
-  if (!search?.tickers?.length) {
-    return (
-      <div className="card">
-        <h1>Tickers</h1>
-        <p className="muted">No ticker index in cache. Run npm run sync:cache:cdn.</p>
-      </div>
-    );
-  }
-
-  const tickers = [...search.tickers].sort((a, b) =>
-    a.symbol.localeCompare(b.symbol),
-  );
+export default async function TickersPage() {
+  const manifest = await loadManifest();
+  const count = manifest?.stats?.total_tickers ?? manifest?.tickers.length;
 
   return (
     <>
@@ -27,9 +15,13 @@ export default function TickersPage() {
         {" / Tickers"}
       </p>
       <h1>Tickers with research</h1>
-      <p className="muted">{tickers.length} tickers with notes or earnings context</p>
+      <p className="muted">
+        {count != null
+          ? `${count} tickers with notes or earnings context`
+          : "Portfolio and watchlist tickers with research notes"}
+      </p>
       <section className="card">
-        <TickerBrowse tickers={tickers} />
+        <TickerBrowse />
       </section>
     </>
   );

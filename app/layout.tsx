@@ -1,16 +1,23 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { Inter, Space_Grotesk } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 
-import { href } from "@/lib/links";
+import { PageSurface } from "@/components/PageSurface";
+import { SiteHeader } from "@/components/SiteHeader";
+import { ThemeRoot } from "@/components/ThemeRoot";
 import { loadManifest } from "@/lib/data";
+import { themeInitScriptContent } from "@/lib/themeStorage";
 
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
-const spaceGrotesk = Space_Grotesk({
+const geistSans = Geist({
+  variable: "--font-geist-sans",
   subsets: ["latin"],
-  variable: "--font-space-grotesk",
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
@@ -18,30 +25,27 @@ export const metadata: Metadata = {
   description: "Portfolio and watchlist earnings context",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const manifest = loadManifest();
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const manifest = await loadManifest();
   return (
-    <html lang="en" className={`${inter.variable} ${spaceGrotesk.variable}`}>
+    <html
+      lang="en"
+      className={`${geistSans.variable} ${geistMono.variable}`}
+      suppressHydrationWarning
+    >
       <body>
-        <main>
-          <header className="site-header">
-            <Link href={href("/")} className="site-title">
-              Stock Context
-            </Link>
-            <nav className="nav">
-            <Link href={href("/")}>Home</Link>
-            <Link href={href("/tickers")}>Tickers</Link>
-            <Link href={href("/themes")}>Themes</Link>
-            </nav>
-            {manifest ? (
-              <span className="nav-stats muted">
-                {manifest.stats?.total_tickers ?? manifest.tickers.length} tickers ·{" "}
-                {manifest.stats?.total_themes ?? manifest.themes.length} themes
-              </span>
-            ) : null}
-          </header>
-          {children}
-        </main>
+        <Script
+          id="stockcontext-theme-init"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{ __html: themeInitScriptContent() }}
+        />
+        <ThemeRoot>
+          <SiteHeader
+            tickerCount={manifest?.stats?.total_tickers ?? manifest?.tickers.length}
+            themeCount={manifest?.stats?.total_themes ?? manifest?.themes.length}
+          />
+          <PageSurface>{children}</PageSurface>
+        </ThemeRoot>
       </body>
     </html>
   );

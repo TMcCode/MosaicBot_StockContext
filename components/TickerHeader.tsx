@@ -3,16 +3,13 @@ import Link from "next/link";
 import type { Manifest, TickerMeta } from "@/lib/types";
 import { themeHref } from "@/lib/links";
 
+import { TierBadge } from "./TierBadge";
+
 type Props = {
   symbol: string;
   meta: TickerMeta;
   manifest: Manifest | null;
 };
-
-function tierLabel(tier: number | undefined): string | null {
-  if (tier == null) return null;
-  return `T${tier}`;
-}
 
 function themeLink(manifest: Manifest | null, themeName: string) {
   const slug = manifest?.themes.find((t) => t.name === themeName)?.slug;
@@ -31,7 +28,6 @@ function themeLink(manifest: Manifest | null, themeName: string) {
 }
 
 export function TickerHeader({ symbol, meta, manifest }: Props) {
-  const tier = tierLabel(meta.tier);
   const weight =
     meta.portfolio_weight != null && meta.portfolio_weight > 0
       ? `${(meta.portfolio_weight * 100).toFixed(1)}% portfolio`
@@ -41,7 +37,7 @@ export function TickerHeader({ symbol, meta, manifest }: Props) {
     <header className="ticker-header">
       <div className="ticker-title-row">
         <h1>{symbol}</h1>
-        {tier ? <span className={`badge badge-tier badge-tier-${meta.tier}`}>{tier}</span> : null}
+        <TierBadge tier={meta.tier} />
         {weight ? <span className="badge badge-weight">{weight}</span> : null}
       </div>
       {meta.company_name && meta.company_name !== symbol ? (

@@ -63,7 +63,7 @@ Within tier: **higher Weight** → **older report/transcript date** → **higher
 | **B** | Post-earnings transcript + Earnings Results | Night 20 (+ queue); Midday **10** if queue | No `Ticker_Notes` |
 | **C** | Post-earnings performance notes | **~3:00 AM ET** (after Fetch 3) | 40 | `Ticker_Notes`; T+2 calendar + BMO/AMC |
 | **T1** | Theme update (event) | Nightly (~6 AM ET, after B) | 5 (+ backlog) | **One refresh per theme**; context = 90d constituent earnings summaries + theme/ticker tables + web search (not one full transcript) |
-| **T2** | Theme update (180d rotation) | Night | 5 | Excludes portfolio + watchlist theme names |
+| **T2** | Theme update (rotation) | Night | 5 | Vintage cadence + activity burst; excludes portfolio + watchlist |
 | **P** | Stock Context publish | **~4:00 AM** + after midday B | — | Static JSON → CDN |
 
 **Weekends:** Sat + Sun optional queue drain for **A and B** (if backlog).
@@ -195,10 +195,16 @@ Append **`Ticker_Notes`** with reaction + context (transcript if B done; else we
 
 ### 8.1 Daily budget
 
-**10/day:** **5 T1** (after B) + **5 T2** (180d rotation).
+**10/day:** **5 T1** (after B) + **5 T2** (rotation).
 
-- T2 excludes themes on **portfolio** or **watchlist** lists (those update via T1).  
-- T2 skips themes T1 updated **same calendar day**.
+- T2 skips themes refreshed **same calendar day** (T1 or T2).
+- T2 **excludes** themes on **portfolio** or **watchlist** lists (those update via T1).
+- **Rotation themes** by apostrophe vintage in the title (e.g. `'26`, `'25`):
+  - Current or prior year (`'26`, `'25` as of 2026): **180 days**
+  - 2–3 years old (`'24`, `'23`): **360 days**
+  - **4+ years** old (`'22` and older when as-of 2026): no scheduled T2
+- **Activity override:** if **≥4 distinct constituents** had a ticker text-table content update in the last **90 days**, the theme is T2-eligible regardless of vintage (including retired themes).
+- Themes with no vintage tag: **360-day** cadence.
 
 ### 8.2 Theme per ticker (T1)
 
@@ -221,7 +227,7 @@ Append **`Ticker_Notes`** with reaction + context (transcript if B done; else we
 ### 8.5 Queues
 
 - T1 overflow → remains in `Theme_T1_Pending` for a later night (tier preserved on each row).  
-- T2: oldest `last_theme_refresh_at` among eligible non-port/non-watchlist themes.
+- T2: oldest `last_theme_refresh_at` among eligible themes (activity-burst themes sort ahead).
 
 ---
 
@@ -343,7 +349,7 @@ See [CLOUD_RUN.md](CLOUD_RUN.md).
 | # | Decision |
 |---|----------|
 | 1 | 10 themes/day: **5 T1 + 5 T2** |
-| 2 | T2 excludes portfolio + watchlist theme names |
+| 2 | T2 excludes portfolio + watchlist; vintage cadence + 4-ticker/90d burst |
 | 3 | T2 dedup if T1 same day; Theme_Notes quarter rule for auto notes |
 | 4 | Pre queue same ranking as B |
 | 5 | B cancels A; manual pre allowed |
