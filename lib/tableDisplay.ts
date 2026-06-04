@@ -91,3 +91,29 @@ export function sentimentClass(sentiment: string | undefined): string {
   if (s.includes("bear")) return "badge badge-bear";
   return "badge";
 }
+
+/** Width hints for multi-row research tables (catalysts, notes, metrics). */
+export function tableColumnLayoutClass(columnId: string): string {
+  const lower = columnId.toLowerCase();
+  if (
+    lower === "whyitmatters" ||
+    lower.includes("why_it") ||
+    lower.includes("whyit") ||
+    lower.includes("summary") ||
+    lower.includes("description") ||
+    lower === "note" ||
+    lower.endsWith("notes")
+  ) {
+    return "col-wide";
+  }
+  if (lower === "catalyst" || lower.includes("catalyst")) {
+    return "col-catalyst";
+  }
+  if (
+    /date|timing|mentions|sentiment|reaction|tier|source/i.test(lower) ||
+    lower === "tickersorthemespecific"
+  ) {
+    return "col-narrow";
+  }
+  return "col-medium";
+}

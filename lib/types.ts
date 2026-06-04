@@ -49,6 +49,14 @@ export type TickerMeta = {
   financials_url?: string;
 };
 
+export type ThemeContentSummary = {
+  sections_ready?: number;
+  sections_total?: number;
+  has_thesis?: boolean;
+  thesis_updated_at?: string | null;
+  theme_upload_count?: number;
+};
+
 export type ThemeMeta = {
   slug: string;
   name: string;
@@ -59,6 +67,7 @@ export type ThemeMeta = {
   as_of?: string;
   build_id?: string;
   last_updated_at?: string;
+  content?: ThemeContentSummary;
   constituents: ThemeConstituent[];
 };
 

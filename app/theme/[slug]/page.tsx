@@ -11,6 +11,10 @@ import {
 } from "@/lib/data";
 import { href, tickerHref } from "@/lib/links";
 import { formatDateOnly } from "@/lib/tableDisplay";
+import {
+  formatThemeContentStats,
+  formatTickerCoverageStats,
+} from "@/lib/themePageStats";
 
 export function generateStaticParams() {
   return allThemeSlugs().map((slug) => ({ slug }));
@@ -31,6 +35,7 @@ export default async function ThemePage({ params }: Props) {
   const tableEntries = (tablesIndex?.tables ?? []).filter((t) => t.has_data && t.body_url);
   const buildId = tablesIndex?.build_id;
   const overviewEntry = tableEntries.find((t) => t.slug === "overview");
+  const bullBearEntry = tableEntries.find((t) => t.slug === "bull-bear-details");
   let lastUpdated = formatDateOnly(meta.last_updated_at);
   if (overviewEntry?.body_url) {
     const overviewBody = await loadTableBody(overviewEntry.body_url, buildId);
@@ -38,8 +43,27 @@ export default async function ThemePage({ params }: Props) {
     const fromOverview = formatDateOnly(row?.LastUpdated ?? row?.last_updated);
     if (fromOverview) lastUpdated = fromOverview;
   }
-  const withData = meta.constituents.filter((c) => c.has_table_data !== false && c.meta_url);
-  const withoutData = meta.constituents.filter((c) => c.has_table_data === false || !c.meta_url);
+  let hasThesisFromTables = meta.content?.has_thesis;
+  if (hasThesisFromTables == null && bullBearEntry?.body_url) {
+    const bullBearBody = await loadTableBody(bullBearEntry.body_url, buildId);
+    const thesis = bullBearBody?.rows[0]?.thesis?.trim();
+    hasThesisFromTables = Boolean(thesis && thesis !== "False");
+  }
+  const withData = meta.constituents.filter((c) => c.has_table_data !== false);
+  const withoutData = meta.constituents.filter((c) => c.has_table_data === false);
+  const themeTables = tablesIndex?.tables ?? [];
+  const themeSectionsReady =
+    themeTables.length > 0
+      ? themeTables.filter((t) => t.has_data).length
+      : tableEntries.length;
+  const themeSectionsTotal = themeTables.length > 0 ? themeTables.length : 5;
+  const themeContentLine = formatThemeContentStats({
+    content: meta.content,
+    hasThesisFromTables,
+    themeSectionsReady,
+    themeSectionsTotal,
+  });
+  const tickerCoverageLine = formatTickerCoverageStats(withData.length, withoutData.length);
 
   return (
     <>
@@ -59,9 +83,14 @@ export default async function ThemePage({ params }: Props) {
           </p>
         ) : null}
       </div>
-      <p className="muted">
-        {withData.length} with research notes
-        {withoutData.length > 0 ? ` · ${withoutData.length} pending` : ""}
+      <p className="muted theme-page-stats">
+        <span className="theme-page-stats-theme">
+          <span className="theme-page-stats-label">Theme</span> {themeContentLine}
+        </span>
+        <span className="theme-page-stats-sep"> · </span>
+        <span className="theme-page-stats-tickers">
+          <span className="theme-page-stats-label">Tickers</span> {tickerCoverageLine}
+        </span>
       </p>
 
       {tableEntries.length === 0 ? (
@@ -90,7 +119,7 @@ export default async function ThemePage({ params }: Props) {
         <h2>Constituents</h2>
         <ul className="grid constituent-list">
           {meta.constituents.map((c) => {
-            const hasPage = c.has_table_data !== false && c.meta_url;
+            const hasPage = c.has_table_data !== false;
             return (
               <li key={c.symbol} className={hasPage ? "browse-row" : "browse-row constituent-muted"}>
                 <div className="browse-row-primary">

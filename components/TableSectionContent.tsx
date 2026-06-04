@@ -11,18 +11,24 @@ import {
   isOverviewMetaColumn,
   primaryMarkdownColumn,
   sentimentClass,
+  tableColumnLayoutClass,
   visibleDataColumns,
 } from "@/lib/tableDisplay";
 import {
   formatThemeOverviewField,
+  hasSplitGoogleTrendColumns,
   hasSplitSearchKeywordColumns,
+  isFullWidthOverviewColumn,
   isSearchKeywordColumn,
+  isTopDatasetColumn,
+  parseTopDatasetEntries,
   sortThemeOverviewColumns,
 } from "@/lib/themeOverviewFormat";
 
 import { ForumWatchlistField } from "./ForumWatchlistField";
 import { Markdown } from "./Markdown";
 import { KeywordListField, SearchKeywordsField } from "./SearchKeywordsField";
+import { TopDatasetsField } from "./TopDatasetsField";
 
 export function TableSectionContent({ body }: { body: TableBody }) {
   const row = body.rows[0];
@@ -71,40 +77,60 @@ function overviewFieldDisplay(
   return val || raw;
 }
 
-function isWideOverviewField(columnId: string): boolean {
-  return (
-    columnId === "ForumWatchlist" ||
-    columnId === "SearchKeywordsNow" ||
-    isSearchKeywordColumn(columnId)
-  );
+function overviewShowsTopDatasets(row: Record<string, string>): boolean {
+  return parseTopDatasetEntries(row).length > 0;
 }
 
 function OverviewSingleRow({ body, row }: { body: TableBody; row: Record<string, string> }) {
   const primary = primaryMarkdownColumn(body);
   const hideSearchKeywordsNow = hasSplitSearchKeywordColumns(row);
+  const hideGoogleTrendNow = hasSplitGoogleTrendColumns(row);
+  const showTopDatasets = overviewShowsTopDatasets(row);
+
   const others = sortThemeOverviewColumns(
     visibleDataColumns(body).filter(
       (c) =>
         c.id !== primary?.id &&
         !/^Bull|^Bear/i.test(c.id) &&
         !isOverviewMetaColumn(c.id) &&
-        !(c.id === "SearchKeywordsNow" && hideSearchKeywordsNow),
+        !isTopDatasetColumn(c.id) &&
+        !(c.id === "SearchKeywordsNow" && hideSearchKeywordsNow) &&
+        !(c.id === "GoogleTrendKeywordsNow" && hideGoogleTrendNow) &&
+        !(c.id === "TopDatasetsToTrack" && showTopDatasets),
     ),
   );
 
+  const fullWidth = others.filter((c) => isFullWidthOverviewColumn(c.id));
+  const gridCols = others.filter((c) => !isFullWidthOverviewColumn(c.id));
+
   return (
-    <div className="single-row-body">
+    <div className="single-row-body overview-layout">
       {primary ? <Markdown>{row[primary.id] ?? ""}</Markdown> : null}
-      {others.length > 0 ? (
+      {fullWidth.map((col) => {
+        const raw = formatCellValue(col.id, row[col.id] ?? "");
+        if (!raw || raw === "False") return null;
+        return (
+          <section key={col.id} className="overview-block field-item-wide">
+            <h3 className="overview-block-label">{formatColumnLabel(col.id, col.label)}</h3>
+            <div className="overview-block-body">{overviewFieldDisplay(col, raw)}</div>
+          </section>
+        );
+      })}
+      {showTopDatasets ? (
+        <section className="overview-block field-item-wide">
+          <h3 className="overview-block-label">Top datasets to track</h3>
+          <div className="overview-block-body">
+            <TopDatasetsField row={row} />
+          </div>
+        </section>
+      ) : null}
+      {gridCols.length > 0 ? (
         <dl className="field-grid">
-          {others.map((col) => {
+          {gridCols.map((col) => {
             const raw = formatCellValue(col.id, row[col.id] ?? "");
             if (!raw || raw === "False") return null;
             return (
-              <div
-                key={col.id}
-                className={`field-item${isWideOverviewField(col.id) ? " field-item-wide" : ""}`}
-              >
+              <div key={col.id} className="field-item">
                 <dt>{formatColumnLabel(col.id, col.label)}</dt>
                 <dd>{overviewFieldDisplay(col, raw)}</dd>
               </div>
@@ -173,11 +199,13 @@ function MultiRowTable({ body }: { body: TableBody }) {
 
   return (
     <div className="table-wrap">
-      <table>
+      <table className="data-table">
         <thead>
           <tr>
             {cols.map((col) => (
-              <th key={col.id}>{formatColumnLabel(col.id, col.label)}</th>
+              <th key={col.id} className={tableColumnLayoutClass(col.id)}>
+                {formatColumnLabel(col.id, col.label)}
+              </th>
             ))}
           </tr>
         </thead>
@@ -186,16 +214,17 @@ function MultiRowTable({ body }: { body: TableBody }) {
             <tr key={i}>
               {cols.map((col) => {
                 const raw = formatCellValue(col.id, r[col.id] ?? "");
+                const cellClass = tableColumnLayoutClass(col.id);
                 if (col.id === "CommentSentiment" && raw) {
                   return (
-                    <td key={col.id}>
+                    <td key={col.id} className={cellClass}>
                       <span className={sentimentClass(raw)}>{raw}</span>
                     </td>
                   );
                 }
                 if (col.id === "PriceReaction" && raw) {
                   return (
-                    <td key={col.id}>
+                    <td key={col.id} className={cellClass}>
                       <span className={raw.includes("+") ? "pos" : raw.includes("-") ? "neg" : ""}>
                         {raw}
                       </span>
@@ -203,7 +232,7 @@ function MultiRowTable({ body }: { body: TableBody }) {
                   );
                 }
                 return (
-                  <td key={col.id}>
+                  <td key={col.id} className={cellClass}>
                     {markdownCols.has(col.id) ? <Markdown>{raw}</Markdown> : raw}
                   </td>
                 );

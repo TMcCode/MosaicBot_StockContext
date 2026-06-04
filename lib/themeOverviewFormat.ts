@@ -276,17 +276,122 @@ export function isSearchKeywordColumn(columnId: string): boolean {
   );
 }
 
-/** Display order for Theme_Overview single-row grid (Top Datasets before Google Trends). */
-export const THEME_OVERVIEW_COLUMN_ORDER: string[] = [
-  "HiringTrendWatchpoints",
-  "ForumWatchlist",
-  "SecondOrderTrends",
-  "TopDatasetsToTrack",
+export type TopDatasetEntry = {
+  index: number;
+  dataset_name: string;
+  dataset_type?: string;
+  source_provider?: string;
+  cadence?: string;
+  why_it_matters?: string;
+  suggested_query?: string;
+  confidence?: string;
+  /** Pre-formatted block from upstream (TopDataset1–5 text columns). */
+  formattedText?: string;
+};
+
+export const TOP_DATASET_SPLIT_COLUMN_IDS = [
   "TopDataset1",
   "TopDataset2",
   "TopDataset3",
   "TopDataset4",
   "TopDataset5",
+] as const;
+
+export const GOOGLE_TREND_SPLIT_COLUMN_IDS = [
+  "GoogleTrendProductCategoryIntent",
+  "GoogleTrendConsumerIntent",
+  "GoogleTrendMacroPolicyTerms",
+] as const;
+
+export function isTopDatasetColumn(columnId: string): boolean {
+  return columnId === "TopDatasetsToTrack" || /^TopDataset\d$/i.test(columnId);
+}
+
+export function hasSplitTopDatasetColumns(row: Record<string, string>): boolean {
+  return TOP_DATASET_SPLIT_COLUMN_IDS.some((id) => fieldStr(row[id]));
+}
+
+export function hasSplitGoogleTrendColumns(row: Record<string, string>): boolean {
+  return GOOGLE_TREND_SPLIT_COLUMN_IDS.some((id) => fieldStr(row[id]));
+}
+
+function entryFromDatasetObject(item: Record<string, unknown>, index: number): TopDatasetEntry {
+  return {
+    index,
+    dataset_name: fieldStr(item.dataset_name ?? item.dataset_id) || `Dataset ${index}`,
+    dataset_type: fieldStr(item.dataset_type),
+    source_provider: fieldStr(item.source_provider),
+    cadence: fieldStr(item.cadence),
+    why_it_matters: fieldStr(item.why_it_matters),
+    suggested_query: fieldStr(item.suggested_query),
+    confidence: fieldStr(item.confidence),
+  };
+}
+
+function parseTopDatasetCell(cell: string, index: number): TopDatasetEntry | null {
+  const parsed = parseJsonCell(cell);
+  if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+    return entryFromDatasetObject(parsed as Record<string, unknown>, index);
+  }
+  const t = fieldStr(cell);
+  if (!t) return null;
+  if (t.startsWith("{") || t.startsWith("[")) return null;
+  return { index, dataset_name: t.split("\n")[0]?.replace(/^\d+\.\s*/, "") || `Dataset ${index}`, formattedText: t };
+}
+
+/** One list from TopDataset1–5 or TopDatasetsToTrack JSON (never both in UI). */
+export function parseTopDatasetEntries(row: Record<string, string>): TopDatasetEntry[] {
+  const fromSplit: TopDatasetEntry[] = [];
+  for (let i = 0; i < TOP_DATASET_SPLIT_COLUMN_IDS.length; i++) {
+    const id = TOP_DATASET_SPLIT_COLUMN_IDS[i];
+    const entry = parseTopDatasetCell(fieldStr(row[id]), i + 1);
+    if (entry) fromSplit.push(entry);
+  }
+  if (fromSplit.length) return fromSplit;
+
+  const raw = fieldStr(row.TopDatasetsToTrack);
+  if (!raw) return [];
+  const parsed = parseJsonCell(raw);
+  let list: unknown[] | null = null;
+  if (Array.isArray(parsed)) list = parsed;
+  else if (parsed && typeof parsed === "object") {
+    const obj = parsed as Record<string, unknown>;
+    for (const k of ["datasets", "items", "TopDatasetsToTrack", "top_datasets_to_track", "data"]) {
+      if (Array.isArray(obj[k])) {
+        list = obj[k];
+        break;
+      }
+    }
+    if (!list) list = [parsed];
+  }
+  if (!list) return [];
+  return list
+    .map((item, i) => {
+      if (item && typeof item === "object" && !Array.isArray(item)) {
+        return entryFromDatasetObject(item as Record<string, unknown>, i + 1);
+      }
+      const one = fieldStr(item);
+      return one ? { index: i + 1, dataset_name: one } : null;
+    })
+    .filter((e): e is TopDatasetEntry => e != null);
+}
+
+/** Long narrative / combined blocks that should span the overview grid. */
+export function isFullWidthOverviewColumn(columnId: string): boolean {
+  return (
+    columnId === "HiringTrendWatchpoints" ||
+    columnId === "SecondOrderTrends" ||
+    columnId === "ForumWatchlist" ||
+    columnId === "SearchKeywordsNow" ||
+    isSearchKeywordColumn(columnId)
+  );
+}
+
+/** Display order for Theme_Overview single-row grid (Top Datasets before Google Trends). */
+export const THEME_OVERVIEW_COLUMN_ORDER: string[] = [
+  "HiringTrendWatchpoints",
+  "ForumWatchlist",
+  "SecondOrderTrends",
   "SearchKeywordsNow",
   "SearchKeywordsBrandProduct",
   "SearchKeywordsPolicyRegulatory",
