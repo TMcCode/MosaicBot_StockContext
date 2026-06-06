@@ -40,21 +40,16 @@
   margin-left: auto;
 }
 
-.links a {
+.authNav {
+  font-size: 14px;
+  font-weight: 600;
   color: var(--nav-muted);
   text-decoration: none;
-  font-size: 14px;
 }
 
-.links a:hover {
+.authNav:hover {
   color: var(--nav-accent);
   text-decoration: none;
-}
-
-.stats {
-  color: var(--nav-muted);
-  font-size: 12px;
-  white-space: nowrap;
 }
 
 .themeToggle {
@@ -107,8 +102,4 @@
     padding: 0 0 12px;
   }
 
-  .stats {
-    width: 100%;
-    order: 4;
-  }
 }

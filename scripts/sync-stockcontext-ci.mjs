@@ -228,6 +228,32 @@ async function syncTickerBundles(meta) {
   return downloaded;
 }
 
+/** Theme meta is synced from manifest; pull tables/index + section bodies (same as tickers). */
+async function syncThemeBundles(meta) {
+  const themesDir = path.join(CACHE, "themes");
+  if (!fs.existsSync(themesDir)) return 0;
+
+  let downloaded = 0;
+  const bundleUrls = new Set();
+  for (const slug of fs.readdirSync(themesDir)) {
+    const metaPath = path.join(themesDir, slug, "meta.v0.json");
+    if (fs.existsSync(metaPath)) {
+      collectUrls(JSON.parse(fs.readFileSync(metaPath, "utf8")), bundleUrls);
+    }
+  }
+  downloaded += await downloadMany(bundleUrls, meta);
+
+  const bodyUrls = new Set();
+  for (const slug of fs.readdirSync(themesDir)) {
+    const indexPath = path.join(themesDir, slug, "tables", "index.v0.json");
+    if (fs.existsSync(indexPath)) {
+      collectUrls(JSON.parse(fs.readFileSync(indexPath, "utf8")), bodyUrls);
+    }
+  }
+  downloaded += await downloadMany(bodyUrls, meta);
+  return downloaded;
+}
+
 async function main() {
   fs.mkdirSync(CACHE, { recursive: true });
   const meta = loadMeta();
@@ -284,6 +310,7 @@ async function main() {
       }
     }
     downloaded += await syncTickerBundles(meta);
+    downloaded += await syncThemeBundles(meta);
     const label = cdnSyncEnabled() ? "CDN" : "R2";
     console.log(`sync-stockcontext-ci: ${label} sync done (${downloaded} files updated)`);
   } else {

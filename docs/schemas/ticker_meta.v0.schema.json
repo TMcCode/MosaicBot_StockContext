@@ -12,6 +12,11 @@
     "as_of": { "type": "string", "minLength": 1 },
     "build_id": { "type": "string" },
     "company_name": { "type": "string" },
+    "logo_url": {
+      "type": "string",
+      "format": "uri",
+      "description": "Public logo image URL from mosaic ETL (optional)"
+    },
     "exchange": { "type": "string" },
     "tier": { "type": "integer", "enum": [1, 2, 3] },
     "portfolio_weight": { "type": ["number", "null"] },

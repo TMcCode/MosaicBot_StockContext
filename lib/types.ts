@@ -13,6 +13,9 @@ export type Manifest = {
     universe_without_data?: number;
     total_themes?: number;
     themes_with_data?: number;
+    text_table_activity_days?: number;
+    tickers_text_table_updated_180d?: number;
+    themes_text_table_updated_180d?: number;
   };
   tickers: TickerManifestEntry[];
   themes: ThemeIndexEntry[];
@@ -40,6 +43,8 @@ export type ThemeIndexEntry = {
 export type TickerMeta = {
   symbol: string;
   company_name?: string;
+  /** Public CDN URL from ETL ``ticker_logos_index`` (publish-time). */
+  logo_url?: string | null;
   tier?: number;
   portfolio_weight?: number | null;
   primary_theme?: string | null;

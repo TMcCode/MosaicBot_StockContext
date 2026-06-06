@@ -145,7 +145,6 @@ function OverviewSingleRow({ body, row }: { body: TableBody; row: Record<string,
 function BullBearSingleRow({ body, row }: { body: TableBody; row: Record<string, string> }) {
   const groups = bullBearGroups(body)!;
   const thesis = body.columns.find((c) => c.id === "thesis");
-  const thesisUpdate = body.columns.find((c) => c.id === "thesis_update");
 
   return (
     <div className="single-row-body">
@@ -153,12 +152,6 @@ function BullBearSingleRow({ body, row }: { body: TableBody; row: Record<string,
         <div className="thesis-block">
           <h3 className="block-label">Thesis</h3>
           <Markdown>{row[thesis.id]}</Markdown>
-        </div>
-      ) : null}
-      {thesisUpdate && row[thesisUpdate.id] ? (
-        <div className="thesis-block">
-          <h3 className="block-label">Thesis update</h3>
-          <Markdown>{row[thesisUpdate.id]}</Markdown>
         </div>
       ) : null}
       <div className="bull-bear-grid">

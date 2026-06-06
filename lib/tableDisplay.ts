@@ -33,7 +33,7 @@ export function formatColumnLabel(id: string, label: string): string {
 }
 
 export function visibleDataColumns(body: TableBody) {
-  return body.columns.filter((c) => !isFooterColumn(c.id));
+  return body.columns.filter((c) => !isFooterColumn(c.id) && !isRedundantDateColumn(c.id));
 }
 
 export function bullBearGroups(body: TableBody) {
@@ -65,8 +65,21 @@ export function formatDateOnly(value: string | undefined | null): string {
   return v.split(/\s/)[0] ?? v;
 }
 
+/** Date/metadata columns redundant with the section footer ``Updated …``. */
+export function isRedundantDateColumn(id: string): boolean {
+  const norm = id.trim().toLowerCase().replace(/\s+/g, "");
+  return (
+    norm === "date" ||
+    norm === "dateadded" ||
+    norm === "lastupdated" ||
+    norm === "last_updated" ||
+    norm === "thesisupdate" ||
+    norm === "thesis_update"
+  );
+}
+
 export function isOverviewMetaColumn(id: string): boolean {
-  return isFooterColumn(id) || /^lastupdated$/i.test(id) || id === "last_updated";
+  return isFooterColumn(id) || isRedundantDateColumn(id);
 }
 
 export function formatCellValue(id: string, val: string): string {
@@ -109,8 +122,12 @@ export function tableColumnLayoutClass(columnId: string): string {
   if (lower === "catalyst" || lower.includes("catalyst")) {
     return "col-catalyst";
   }
+  if (lower.includes("timing")) {
+    return "col-timing";
+  }
   if (
-    /date|timing|mentions|sentiment|reaction|tier|source/i.test(lower) ||
+    /datestart|dateend|dateadded|^date$/i.test(lower) ||
+    /mentions|sentiment|reaction|tier|source|catalystsource/i.test(lower) ||
     lower === "tickersorthemespecific"
   ) {
     return "col-narrow";

@@ -1,22 +1,27 @@
 import { loadTableBody } from "@/lib/data";
 import { TableSectionContent } from "@/components/TableSectionContent";
-import type { TableIndexEntry } from "@/lib/types";
+import type { TableBody, TableIndexEntry } from "@/lib/types";
 
 type Props = {
   entry: TableIndexEntry;
   buildId?: string;
   defaultOpen?: boolean;
+  /** Preloaded/merged body (skips fetch when set). */
+  body?: TableBody | null;
 };
 
 /** Server-rendered table accordion (reads `.cache` / CDN via `loadTableBody`). */
-export async function TableSection({ entry, buildId, defaultOpen = false }: Props) {
+export async function TableSection({ entry, buildId, defaultOpen = false, body: bodyProp }: Props) {
   let error: string | null = null;
-  const body = entry.body_url
-    ? await loadTableBody(entry.body_url, buildId).catch((e: unknown) => {
+  const body =
+    bodyProp !== undefined
+      ? bodyProp
+      : entry.body_url
+        ? await loadTableBody(entry.body_url, buildId).catch((e: unknown) => {
         error = e instanceof Error ? e.message : "Failed to load section";
-        return null;
-      })
-    : null;
+            return null;
+          })
+        : null;
 
   return (
     <details className="card table-section table-accordion" open={defaultOpen}>

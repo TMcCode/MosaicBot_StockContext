@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { TextTableActivityStats } from "@/components/TextTableActivityStats";
 import { TickerBrowse } from "@/components/TickerBrowse";
 import { loadManifest } from "@/lib/data";
 import { href } from "@/lib/links";
@@ -20,6 +21,7 @@ export default async function TickersPage() {
           ? `${count} tickers with notes or earnings context`
           : "Portfolio and watchlist tickers with research notes"}
       </p>
+      <TextTableActivityStats manifest={manifest} />
       <section className="card">
         <TickerBrowse />
       </section>

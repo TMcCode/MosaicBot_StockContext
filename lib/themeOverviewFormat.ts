@@ -383,9 +383,22 @@ export function isFullWidthOverviewColumn(columnId: string): boolean {
     columnId === "SecondOrderTrends" ||
     columnId === "ForumWatchlist" ||
     columnId === "SearchKeywordsNow" ||
-    isSearchKeywordColumn(columnId)
+    isSearchKeywordColumn(columnId) ||
+    columnId === "GoogleTrendKeywordsNow" ||
+    (GOOGLE_TREND_SPLIT_COLUMN_IDS as readonly string[]).includes(columnId)
   );
 }
+
+/** Canonical Theme_Overview sections (matches utils/theme_overview_schema.py). */
+export const THEME_OVERVIEW_SECTION_LABELS: { id: string; label: string }[] = [
+  { id: "thesis", label: "Theme thesis (Bull / Bear Details)" },
+  { id: "HiringTrendWatchpoints", label: "Hiring trend watchpoints" },
+  { id: "ForumWatchlist", label: "Forum watchlist" },
+  { id: "SecondOrderTrends", label: "Second-order trends" },
+  { id: "SearchKeywordsNow", label: "Search keywords" },
+  { id: "GoogleTrendKeywordsNow", label: "Google Trends keywords" },
+  { id: "TopDatasetsToTrack", label: "Top datasets to track" },
+];
 
 /** Display order for Theme_Overview single-row grid (Top Datasets before Google Trends). */
 export const THEME_OVERVIEW_COLUMN_ORDER: string[] = [

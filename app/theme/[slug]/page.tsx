@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { PageReadControl } from "@/components/PageReadControl";
 import { TableSection } from "@/components/TableSection";
 import { TierBadge } from "@/components/TierBadge";
 import {
@@ -15,6 +16,7 @@ import {
   formatThemeContentStats,
   formatTickerCoverageStats,
 } from "@/lib/themePageStats";
+import { orderThemeTableEntries } from "@/lib/themeTableOrder";
 
 export function generateStaticParams() {
   return allThemeSlugs().map((slug) => ({ slug }));
@@ -32,7 +34,9 @@ export default async function ThemePage({ params }: Props) {
     notFound();
   }
 
-  const tableEntries = (tablesIndex?.tables ?? []).filter((t) => t.has_data && t.body_url);
+  const tableEntries = orderThemeTableEntries(
+    (tablesIndex?.tables ?? []).filter((t) => t.has_data && t.body_url),
+  );
   const buildId = tablesIndex?.build_id;
   const overviewEntry = tableEntries.find((t) => t.slug === "overview");
   const bullBearEntry = tableEntries.find((t) => t.slug === "bull-bear-details");
@@ -93,26 +97,35 @@ export default async function ThemePage({ params }: Props) {
         </span>
       </p>
 
+      <PageReadControl pageType="theme" pageKey={slug} buildId={buildId} />
+
       {tableEntries.length === 0 ? (
         <section className="card">
           <p className="muted">
-            Theme text tables are not in your local/CDN bundle yet (marquee only means rows
-            exist in R2 — each theme still needs a publish). Run:{" "}
+            Theme research sections are not available on this build yet. Data may still be
+            publishing to the CDN — try again after the next site deploy. If this persists,
+            republish from MosaicBot:{" "}
             <code>
               python -m stockcontext_jobs.publish_stockcontext --themes-only --theme-slug {slug}
-            </code>{" "}
-            or <code>--themes-only</code> without <code>--theme-slug</code> for all themes.
+            </code>
           </p>
         </section>
       ) : (
-        tableEntries.map((entry, i) => (
-          <TableSection
-            key={entry.slug}
-            entry={entry}
-            buildId={buildId}
-            defaultOpen={i === 0}
-          />
-        ))
+        <>
+          <p className="page-intro muted">
+            <strong>Bull / Bear Details</strong> has the investment thesis and bull/bear
+            points. <strong>Overview</strong> is monitoring guidance (hiring, forums,
+            second-order trends, search keywords, Google Trends, datasets).
+          </p>
+          {tableEntries.map((entry) => (
+            <TableSection
+              key={entry.slug}
+              entry={entry}
+              buildId={buildId}
+              defaultOpen={entry.slug === "bull-bear-details"}
+            />
+          ))}
+        </>
       )}
 
       <section className="card">

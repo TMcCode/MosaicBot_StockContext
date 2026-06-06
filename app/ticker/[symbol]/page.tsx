@@ -1,15 +1,19 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { PageReadControl } from "@/components/PageReadControl";
 import { TableSection } from "@/components/TableSection";
 import { TickerHeader } from "@/components/TickerHeader";
 import {
   allTickerSymbols,
   loadManifest,
+  loadTableBody,
   loadTickerMeta,
   loadTickerTablesIndex,
 } from "@/lib/data";
 import { href } from "@/lib/links";
+import { mergeOverviewTableBodies } from "@/lib/mergeOverviewTableBodies";
+import type { TableBody, TableIndexEntry } from "@/lib/types";
 
 export function generateStaticParams() {
   return allTickerSymbols().map((symbol) => ({ symbol }));
@@ -29,8 +33,8 @@ export default async function TickerPage({ params }: Props) {
     notFound();
   }
 
-  const tableEntries = (index?.tables ?? []).filter((t) => t.has_data && t.body_url);
   const buildId = index?.build_id;
+  const tableEntries = await prepareTickerTableEntries(index?.tables ?? [], buildId);
 
   return (
     <>
@@ -42,6 +46,7 @@ export default async function TickerPage({ params }: Props) {
         <span>{symbol}</span>
       </nav>
       <TickerHeader symbol={symbol} meta={meta} manifest={manifest} />
+      <PageReadControl pageType="ticker" pageKey={symbol} buildId={buildId} />
 
       {/* chart_1y + financials: lazy-load from meta.chart_url / meta.financials_url when UI lands */}
 
@@ -51,14 +56,49 @@ export default async function TickerPage({ params }: Props) {
         </section>
       ) : null}
 
-      {tableEntries.map((entry, i) => (
+      {tableEntries.map((prepared, i) => (
         <TableSection
-          key={entry.slug}
-          entry={entry}
+          key={prepared.entry.slug}
+          entry={prepared.entry}
           buildId={buildId}
+          body={prepared.body}
           defaultOpen={i === 0}
         />
       ))}
     </>
   );
+}
+
+type PreparedTableEntry = {
+  entry: TableIndexEntry;
+  body?: TableBody | null;
+};
+
+async function prepareTickerTableEntries(
+  tables: TableIndexEntry[],
+  buildId?: string,
+): Promise<PreparedTableEntry[]> {
+  const withData = tables.filter((t) => t.has_data && t.body_url);
+  const detailed = withData.find((t) => t.slug === "detailed-overview");
+  const rest = withData.filter((t) => t.slug !== "detailed-overview");
+
+  const prepared: PreparedTableEntry[] = [];
+  for (const entry of rest) {
+    if (entry.slug !== "overview") {
+      prepared.push({ entry });
+      continue;
+    }
+    const overviewBody = entry.body_url
+      ? await loadTableBody(entry.body_url, buildId).catch(() => null)
+      : null;
+    const detailedBody =
+      detailed?.body_url && detailed.body_url !== entry.body_url
+        ? await loadTableBody(detailed.body_url, buildId).catch(() => null)
+        : null;
+    prepared.push({
+      entry,
+      body: mergeOverviewTableBodies(overviewBody, detailedBody),
+    });
+  }
+  return prepared;
 }

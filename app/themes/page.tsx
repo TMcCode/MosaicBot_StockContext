@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { TextTableActivityStats } from "@/components/TextTableActivityStats";
 import { ThemeBrowse } from "@/components/ThemeBrowse";
 import { loadManifest } from "@/lib/data";
 import { href } from "@/lib/links";
@@ -37,6 +38,7 @@ export default async function ThemesPage() {
       <p className="muted">
         {withData} with research · {themes.length} total in MosaicBot
       </p>
+      <TextTableActivityStats manifest={manifest} />
       <section className="card">
         <ThemeBrowse themes={themes} />
       </section>

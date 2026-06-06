@@ -43,7 +43,12 @@
       "properties": {
         "total_tickers": { "type": "integer", "minimum": 0 },
         "portfolio_tickers": { "type": "integer", "minimum": 0 },
-        "watchlist_tickers": { "type": "integer", "minimum": 0 }
+        "watchlist_tickers": { "type": "integer", "minimum": 0 },
+        "total_themes": { "type": "integer", "minimum": 0 },
+        "themes_with_data": { "type": "integer", "minimum": 0 },
+        "text_table_activity_days": { "type": "integer", "minimum": 1 },
+        "tickers_text_table_updated_180d": { "type": "integer", "minimum": 0 },
+        "themes_text_table_updated_180d": { "type": "integer", "minimum": 0 }
       }
     },
     "tickers": {

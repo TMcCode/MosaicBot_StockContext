@@ -3,9 +3,10 @@ import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
 
 import { PageSurface } from "@/components/PageSurface";
+import { ReadStateProvider } from "@/components/ReadStateProvider";
 import { SiteHeader } from "@/components/SiteHeader";
+import { SupabaseAuthProvider } from "@/components/SupabaseAuthProvider";
 import { ThemeRoot } from "@/components/ThemeRoot";
-import { loadManifest } from "@/lib/data";
 import { themeInitScriptContent } from "@/lib/themeStorage";
 
 import "./globals.css";
@@ -25,8 +26,7 @@ export const metadata: Metadata = {
   description: "Portfolio and watchlist earnings context",
 };
 
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const manifest = await loadManifest();
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
       lang="en"
@@ -39,13 +39,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           strategy="beforeInteractive"
           dangerouslySetInnerHTML={{ __html: themeInitScriptContent() }}
         />
-        <ThemeRoot>
-          <SiteHeader
-            tickerCount={manifest?.stats?.total_tickers ?? manifest?.tickers.length}
-            themeCount={manifest?.stats?.total_themes ?? manifest?.themes.length}
-          />
-          <PageSurface>{children}</PageSurface>
-        </ThemeRoot>
+        <SupabaseAuthProvider>
+          <ReadStateProvider>
+            <ThemeRoot>
+              <SiteHeader />
+              <PageSurface>{children}</PageSurface>
+            </ThemeRoot>
+          </ReadStateProvider>
+        </SupabaseAuthProvider>
       </body>
     </html>
   );

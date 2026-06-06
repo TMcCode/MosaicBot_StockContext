@@ -58,4 +58,8 @@ python -m stockcontext_jobs.publish_stockcontext   # same entrypoint as Cloud Ru
 |----------|---------|
 | `DATA_BASE_URL` | `https://storage.stockthemes.ai/stockcontext/` |
 | `NEXT_PUBLIC_BASE_PATH` | **`/MosaicBot_StockContext`** (must match repo name; workflow defaults this if unset) |
+| `NEXT_PUBLIC_SUPABASE_URL` | Same Supabase project as stockthemes.ai (optional; enables sign-in + read sync) |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key (public; RLS protects rows) |
+
+Sign-in and read-state setup: [docs/AUTH_READ_STATE.md](docs/AUTH_READ_STATE.md).
 | R2 secrets (CI) | Same as stockthemes — prefix `stockcontext/` |

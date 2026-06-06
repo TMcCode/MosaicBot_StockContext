@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { resolveTickerLogoUrl } from "@/lib/logoUrl";
 import type { Manifest, TickerMeta } from "@/lib/types";
 import { themeHref } from "@/lib/links";
 
@@ -32,17 +33,32 @@ export function TickerHeader({ symbol, meta, manifest }: Props) {
     meta.portfolio_weight != null && meta.portfolio_weight > 0
       ? `${(meta.portfolio_weight * 100).toFixed(1)}% portfolio`
       : null;
+  const logoUrl = resolveTickerLogoUrl(meta.logo_url);
 
   return (
     <header className="ticker-header">
-      <div className="ticker-title-row">
-        <h1>{symbol}</h1>
-        <TierBadge tier={meta.tier} />
-        {weight ? <span className="badge badge-weight">{weight}</span> : null}
+      <div className="ticker-header-main">
+        <div className="ticker-title-row">
+          {logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element -- external CDN URL from publish JSON
+            <img
+              src={logoUrl}
+              alt=""
+              className="ticker-logo"
+              width={36}
+              height={36}
+              loading="eager"
+              decoding="async"
+            />
+          ) : null}
+          <h1>{symbol}</h1>
+          <TierBadge tier={meta.tier} />
+          {weight ? <span className="badge badge-weight">{weight}</span> : null}
+        </div>
+        {meta.company_name && meta.company_name !== symbol ? (
+          <p className="ticker-subtitle">{meta.company_name}</p>
+        ) : null}
       </div>
-      {meta.company_name && meta.company_name !== symbol ? (
-        <p className="ticker-subtitle">{meta.company_name}</p>
-      ) : null}
       {meta.themes?.length ? (
         <div className="theme-chips">
           {meta.themes.map((name) => themeLink(manifest, name))}
