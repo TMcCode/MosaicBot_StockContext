@@ -43,8 +43,8 @@ Run once after jobs are deployed (from MosaicBot repo):
 | **00:10** | `stockcontext-post-transcript-night` | Night transcripts (Process B) |
 | **03:00** | `stockcontext-earnings-notes` | Ticker_Notes (Process C) |
 | **05:00** | `stockcontext-theme-updates` | Theme T1/T2 |
-| **02:00** | `stockcontext-publish-early` | Incremental publish after pre-earnings + night B |
-| **06:00** | `stockcontext-publish-am` | Full publish after notes + themes |
+| **02:00** | `stockcontext-publish-early` | `--feeds-only --upload` (home/marquee + recent ticker/theme sync) |
+| **06:00** | `stockcontext-publish-am` | Full incremental publish after notes + themes |
 | **12:00** Mon–Fri | `stockcontext-post-transcript-midday` | Midday transcripts |
 
 **Website:** `deploy-pages.yml` runs **twice daily** — ~**2:30 AM ET** (after early publish) and ~**7:30 AM ET** (after morning publish). Push to `main` always rebuilds.
@@ -54,7 +54,7 @@ Run once after jobs are deployed (from MosaicBot repo):
 ```text
 00:00  pre-earnings (A)
 00:10  post-transcript (night, B)
-02:00  publish stockcontext/ JSON (early — A+B batch visible on site)
+02:00  publish feeds + recent sync (early — A+B batch visible on site)
 02:30  GitHub Pages build (early, UTC crons 06:30 + 07:30)
 03:00  earnings notes
 05:00  theme updates
