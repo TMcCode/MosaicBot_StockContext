@@ -25,7 +25,8 @@ Schedulers: `./scripts/setup_stockcontext_automation_schedulers.sh`
 | `stockcontext-publish-job` | **06:00** daily | `publish_stockcontext --mode incremental --upload` (after notes + themes) |
 
 Deploy: `.github/workflows/deploy-stockcontext-publish.yml`  
-Scheduler: `./scripts/setup_stockcontext_publish_scheduler.sh`
+Scheduler: `./scripts/setup_stockcontext_publish_scheduler.sh`  
+Alerts: `NOTIFY_EMAIL=… ./scripts/setup_stockcontext_publish_alerts.sh` (failed execution, running >2h, no success in 10h)
 
 ## Website
 

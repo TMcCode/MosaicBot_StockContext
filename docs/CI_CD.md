@@ -49,6 +49,8 @@ Run once after jobs are deployed (from MosaicBot repo):
 
 **Website:** `deploy-pages.yml` runs **twice daily** — ~**2:30 AM ET** (after early publish) and ~**7:30 AM ET** (after morning publish). Push to `main` always rebuilds.
 
+**Alerts (MosaicBot):** `NOTIFY_EMAIL=… ./scripts/setup_stockcontext_publish_alerts.sh` — email on failed execution, run >2h, or no success in 10h.
+
 ## Nightly order
 
 ```text
