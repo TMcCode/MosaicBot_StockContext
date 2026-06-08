@@ -7,8 +7,8 @@ type Props = {
 export function HomeHero({ buildId }: Props) {
   const eyebrow =
     process.env.NODE_ENV === "development" && buildId
-      ? `stockcontext.ai · ${buildId}`
-      : "stockcontext.ai";
+      ? `stockcontext.info · ${buildId}`
+      : "stockcontext.info";
 
   return (
     <header className={styles.hero}>

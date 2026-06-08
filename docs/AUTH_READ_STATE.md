@@ -6,8 +6,9 @@ Stock Context uses the **same Supabase project** as [stockthemes.ai](https://sto
 
 1. Run SQL: [`supabase/migrations/001_page_reads.sql`](../supabase/migrations/001_page_reads.sql) (also in `mosaicbot_stockthemes/supabase/migrations/005_stockcontext_page_reads.sql`).
 2. **Authentication → URL configuration** — add redirect URLs:
-   - `https://tmccode.github.io/MosaicBot_StockContext/**`
-   - `http://localhost:3000/**` (and your custom domain when live)
+   - `https://stockcontext.info/**`
+   - `https://tmccode.github.io/MosaicBot_StockContext/**` (legacy until retired)
+   - `http://localhost:3000/**`
 3. Copy **Project URL** + **anon key** into `.env.local` and GitHub repo **Variables**:
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`  

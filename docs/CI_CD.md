@@ -26,7 +26,7 @@
 |----------|---------|---------|
 | `deploy-pages.yml` | `push` to `main`, daily schedule, `workflow_dispatch` | Sync R2 → build static export → deploy Pages |
 
-**First-time:** enable **Settings → Pages → GitHub Actions**. Add secrets: `R2_ENDPOINT_URL`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`. Optional vars: `NEXT_PUBLIC_BASE_PATH`, `NEXT_PUBLIC_DATA_BASE_URL`.
+**First-time:** enable **Settings → Pages → GitHub Actions**. Add secrets: `R2_ENDPOINT_URL`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`. Vars: `NEXT_PUBLIC_SITE_URL=https://stockcontext.info`, empty `NEXT_PUBLIC_BASE_PATH`, `NEXT_PUBLIC_DATA_BASE_URL` (CDN). Custom domain: [CUSTOM_DOMAIN.md](CUSTOM_DOMAIN.md).
 
 ## Cloud Scheduler (America/New_York)
 

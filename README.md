@@ -57,7 +57,8 @@ python -m stockcontext_jobs.publish_stockcontext   # same entrypoint as Cloud Ru
 | Variable | Purpose |
 |----------|---------|
 | `DATA_BASE_URL` | `https://storage.stockthemes.ai/stockcontext/` |
-| `NEXT_PUBLIC_BASE_PATH` | **`/MosaicBot_StockContext`** (must match repo name; workflow defaults this if unset) |
+| `NEXT_PUBLIC_BASE_PATH` | **empty** for `https://stockcontext.info`; `/MosaicBot_StockContext` only for legacy github.io URL |
+| `NEXT_PUBLIC_SITE_URL` | `https://stockcontext.info` |
 | `NEXT_PUBLIC_SUPABASE_URL` | Same Supabase project as stockthemes.ai (optional; enables sign-in + read sync) |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key (public; RLS protects rows) |
 
