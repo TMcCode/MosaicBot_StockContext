@@ -112,6 +112,7 @@ export type TableIndexEntry = {
 export type TableBody = {
   slug: string;
   display_name?: string;
+  gcs_table?: string;
   format: string;
   columns: { id: string; label: string; kind?: string }[];
   rows: Record<string, string>[];

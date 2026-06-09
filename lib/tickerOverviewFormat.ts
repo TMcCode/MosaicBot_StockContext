@@ -110,19 +110,20 @@ export function parseSubsidiariesEntries(raw: string): SubsidiaryEntry[] {
   if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return [];
   const subs = (parsed as Record<string, unknown>).subsidiaries;
   if (!Array.isArray(subs)) return [];
-  return subs
-    .map((item) => {
-      if (!item || typeof item !== "object" || Array.isArray(item)) return null;
-      const o = item as Record<string, unknown>;
-      const name = cellStr(o.name);
-      if (!name) return null;
-      return {
-        name,
-        linkedin_hint: cellStr(o.linkedin_hint) || undefined,
-        notes: cellStr(o.notes) || undefined,
-      };
-    })
-    .filter((e): e is SubsidiaryEntry => e != null);
+  const out: SubsidiaryEntry[] = [];
+  for (const item of subs) {
+    if (!item || typeof item !== "object" || Array.isArray(item)) continue;
+    const o = item as Record<string, unknown>;
+    const name = cellStr(o.name);
+    if (!name) continue;
+    const entry: SubsidiaryEntry = { name };
+    const hint = cellStr(o.linkedin_hint);
+    const notes = cellStr(o.notes);
+    if (hint) entry.linkedin_hint = hint;
+    if (notes) entry.notes = notes;
+    out.push(entry);
+  }
+  return out;
 }
 
 export function parseRevenueSegmentEntries(raw: string): RevenueSegmentEntry[] {
@@ -130,19 +131,22 @@ export function parseRevenueSegmentEntries(raw: string): RevenueSegmentEntry[] {
   if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return [];
   const segs = (parsed as Record<string, unknown>).segments;
   if (!Array.isArray(segs)) return [];
-  return segs
-    .map((item) => {
-      if (!item || typeof item !== "object" || Array.isArray(item)) return null;
-      const o = item as Record<string, unknown>;
-      const segment_name = cellStr(o.segment_name) || "(unnamed segment)";
-      return {
-        segment_name,
-        estimated_mix: cellStr(o.estimated_mix) || undefined,
-        source_or_comment: cellStr(o.source_or_comment) || undefined,
-        yoy_or_trend_comment: cellStr(o.yoy_or_trend_comment) || undefined,
-      };
-    })
-    .filter((e): e is RevenueSegmentEntry => e != null);
+  const out: RevenueSegmentEntry[] = [];
+  for (const item of segs) {
+    if (!item || typeof item !== "object" || Array.isArray(item)) continue;
+    const o = item as Record<string, unknown>;
+    const entry: RevenueSegmentEntry = {
+      segment_name: cellStr(o.segment_name) || "(unnamed segment)",
+    };
+    const mix = cellStr(o.estimated_mix);
+    const source = cellStr(o.source_or_comment);
+    const trend = cellStr(o.yoy_or_trend_comment);
+    if (mix) entry.estimated_mix = mix;
+    if (source) entry.source_or_comment = source;
+    if (trend) entry.yoy_or_trend_comment = trend;
+    out.push(entry);
+  }
+  return out;
 }
 
 export function parseProductBrandEntries(raw: string): string[] {
