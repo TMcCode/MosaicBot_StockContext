@@ -9,7 +9,7 @@ import { tickerHref } from "@/lib/links";
 import { collectSiteSearchHits, loadSiteSearchEngine, type SiteSearchEngine } from "@/lib/siteSearchHits";
 import { formatDateOnly } from "@/lib/tableDisplay";
 import type { SearchTickerRow, WorkflowTagsFeed } from "@/lib/types";
-import { fetchPublicJsonText } from "@/lib/fetchPublicJson";
+import { fetchPublicJson } from "@/lib/fetchPublicJson";
 
 type Props = {
   updatedAtBySymbol?: Record<string, string>;
@@ -25,12 +25,11 @@ export function TickerBrowse({ updatedAtBySymbol = {} }: Props) {
   useEffect(() => {
     void Promise.all([
       loadSiteSearchEngine(),
-      fetchPublicJsonText("feeds/workflow_tags.v0.json").catch(() => null),
+      fetchPublicJson<WorkflowTagsFeed>("feeds/workflow_tags.v0.json").catch(() => null),
     ])
-      .then(([searchEngine, tagsText]) => {
+      .then(([searchEngine, feed]) => {
         setEngine(searchEngine);
-        if (tagsText) {
-          const feed = JSON.parse(tagsText) as WorkflowTagsFeed;
+        if (feed) {
           const bySymbol: Record<string, string[]> = {};
           for (const [symbol, tags] of Object.entries(feed.tickers ?? {})) {
             bySymbol[symbol.toUpperCase()] = tags;
