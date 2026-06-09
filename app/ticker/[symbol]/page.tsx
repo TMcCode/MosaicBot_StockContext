@@ -12,11 +12,6 @@ import {
   loadTickerTablesIndex,
 } from "@/lib/data";
 import { href } from "@/lib/links";
-import {
-  COMBINED_METRICS_DISPLAY_NAME,
-  METRICS_COMBINE_HIDE_SLUGS,
-  type MetricsBundle,
-} from "@/lib/keyMetricsCombined";
 import { mergeOverviewTableBodies } from "@/lib/mergeOverviewTableBodies";
 import type { TableBody, TableIndexEntry } from "@/lib/types";
 
@@ -67,7 +62,6 @@ export default async function TickerPage({ params }: Props) {
           entry={prepared.entry}
           buildId={buildId}
           body={prepared.body}
-          metricsBundle={prepared.metricsBundle}
           defaultOpen={i === 0}
         />
       ))}
@@ -78,12 +72,7 @@ export default async function TickerPage({ params }: Props) {
 type PreparedTableEntry = {
   entry: TableIndexEntry;
   body?: TableBody | null;
-  metricsBundle?: MetricsBundle;
 };
-
-function shouldHideCombinedMetricsSection(slug: string, combineMetrics: boolean): boolean {
-  return combineMetrics && (METRICS_COMBINE_HIDE_SLUGS as readonly string[]).includes(slug);
-}
 
 async function prepareTickerTableEntries(
   tables: TableIndexEntry[],
@@ -92,56 +81,11 @@ async function prepareTickerTableEntries(
   const withData = tables.filter((t) => t.has_data && t.body_url);
   const detailed = withData.find((t) => t.slug === "detailed-overview");
   const rest = withData.filter((t) => t.slug !== "detailed-overview");
-  const combineMetrics = rest.some((t) => t.slug === "key-reported-metrics");
-  const metricsEntries = combineMetrics
-    ? {
-        key: rest.find((t) => t.slug === "key-reported-metrics"),
-        rerating: rest.find((t) => t.slug === "rerating-thresholds"),
-        earnings: rest.find((t) => t.slug === "earnings-results"),
-      }
-    : null;
-
-  let reratingBody: TableBody | null = null;
-  let earningsBody: TableBody | null = null;
-  if (metricsEntries) {
-    [reratingBody, earningsBody] = await Promise.all([
-      metricsEntries.rerating?.body_url
-        ? loadTableBody(metricsEntries.rerating.body_url, buildId).catch(() => null)
-        : null,
-      metricsEntries.earnings?.body_url
-        ? loadTableBody(metricsEntries.earnings.body_url, buildId).catch(() => null)
-        : null,
-    ]);
-  }
 
   const prepared: PreparedTableEntry[] = [];
   for (const entry of rest) {
-    if (shouldHideCombinedMetricsSection(entry.slug, combineMetrics)) {
-      continue;
-    }
-
     if (entry.slug !== "overview") {
-      if (entry.slug === "key-reported-metrics" && metricsEntries) {
-        const keyBody = entry.body_url
-          ? await loadTableBody(entry.body_url, buildId).catch(() => null)
-          : null;
-        prepared.push({
-          entry: {
-            ...entry,
-            display_name: COMBINED_METRICS_DISPLAY_NAME,
-          },
-          body: keyBody,
-          metricsBundle: keyBody
-            ? {
-                keyReported: keyBody,
-                rerating: reratingBody,
-                earningsResults: earningsBody,
-              }
-            : undefined,
-        });
-      } else {
-        prepared.push({ entry });
-      }
+      prepared.push({ entry });
       continue;
     }
     const overviewBody = entry.body_url

@@ -36,7 +36,7 @@ import {
   TICKER_OVERVIEW_BEAR_ID,
   TICKER_OVERVIEW_COMPETITORS_ID,
 } from "@/lib/tickerOverviewFormat";
-import type { MetricsBundle } from "@/lib/keyMetricsCombined";
+import { isMetricsCombinedTable } from "@/lib/keyMetricsCombined";
 
 import { CombinedMetricsSection } from "./CombinedMetricsSection";
 import { ForumWatchlistField } from "./ForumWatchlistField";
@@ -46,20 +46,14 @@ import { TickerStructuredJsonField } from "./TickerStructuredJsonField";
 import { TopDatasetsField } from "./TopDatasetsField";
 import { CollapsibleTranscriptRowsTable } from "./CollapsibleTranscriptRowsTable";
 
-export function TableSectionContent({
-  body,
-  metricsBundle,
-}: {
-  body: TableBody;
-  metricsBundle?: MetricsBundle;
-}) {
+export function TableSectionContent({ body }: { body: TableBody }) {
   const row = body.rows[0];
-  const footerBits = metricsBundle ? [] : tableFooterBits(body);
+  const footerBits = isMetricsCombinedTable(body) ? [] : tableFooterBits(body);
 
   return (
     <>
-      {metricsBundle ? (
-        <CombinedMetricsSection bundle={metricsBundle} />
+      {isMetricsCombinedTable(body) ? (
+        <CombinedMetricsSection body={body} />
       ) : body.format === "single_row" && row ? (
         isBullBearLayout(body) ? (
           <BullBearSingleRow body={body} row={row} />

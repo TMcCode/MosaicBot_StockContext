@@ -1,20 +1,17 @@
-import {
-  combinedMetricsFooterBits,
-  type MetricsBundle,
-} from "@/lib/keyMetricsCombined";
+import { type MetricsCombinedTableBody } from "@/lib/keyMetricsCombined";
 
 import { KeyMetricsCombinedTable } from "./KeyMetricsCombinedTable";
 
 type Props = {
-  bundle: MetricsBundle;
+  body: MetricsCombinedTableBody;
 };
 
-export function CombinedMetricsSection({ bundle }: Props) {
-  const footerBits = combinedMetricsFooterBits(bundle);
+export function CombinedMetricsSection({ body }: Props) {
+  const footerBits = body.meta?.footer_bits ?? [];
 
   return (
     <>
-      <KeyMetricsCombinedTable bundle={bundle} />
+      <KeyMetricsCombinedTable body={body} />
       {footerBits.length > 0 ? (
         <p className="table-footer muted">{footerBits.join(" · ")}</p>
       ) : null}

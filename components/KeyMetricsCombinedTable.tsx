@@ -1,19 +1,15 @@
-import {
-  buildCombinedMetricRows,
-  hitTargetClass,
-  type MetricsBundle,
-} from "@/lib/keyMetricsCombined";
+import { hitTargetClass, type MetricsCombinedTableBody } from "@/lib/keyMetricsCombined";
 
 import { Markdown } from "./Markdown";
 
 type Props = {
-  bundle: MetricsBundle;
+  body: MetricsCombinedTableBody;
 };
 
-export function KeyMetricsCombinedTable({ bundle }: Props) {
-  const rows = buildCombinedMetricRows(bundle);
-  const showRerating = (bundle.rerating?.rows.length ?? 0) > 0;
-  const showResults = (bundle.earningsResults?.rows.length ?? 0) > 0;
+export function KeyMetricsCombinedTable({ body }: Props) {
+  const showRerating = body.meta?.show_rerating ?? false;
+  const showResults = body.meta?.show_results ?? false;
+  const rows = body.rows;
 
   if (rows.length === 0) return null;
 
@@ -58,27 +54,27 @@ export function KeyMetricsCombinedTable({ bundle }: Props) {
         </thead>
         <tbody>
           {rows.map((row, i) => (
-            <tr key={`${row.metric}-${i}`}>
+            <tr key={`${row.Metric}-${i}`}>
               <td className="col-medium">
-                <strong>{row.metric}</strong>
+                <strong>{row.Metric}</strong>
               </td>
-              <td className="col-narrow">{row.lastPeriod}</td>
+              <td className="col-narrow">{row["Last Period"]}</td>
               <td className="col-wide metrics-col-krm">
-                {row.whyItMatters ? <Markdown>{row.whyItMatters}</Markdown> : null}
+                {row.KRM_WhyItMatters ? <Markdown>{row.KRM_WhyItMatters}</Markdown> : null}
               </td>
               {showRerating ? (
                 <>
                   <td className="col-wide metrics-col-rerating">
-                    {row.rerating?.whatsNeeded ? <Markdown>{row.rerating.whatsNeeded}</Markdown> : null}
+                    {row.Rerating_WhatsNeeded ? <Markdown>{row.Rerating_WhatsNeeded}</Markdown> : null}
                   </td>
                   <td className="col-wide metrics-col-rerating">
-                    {row.rerating?.whyItMatters ? (
-                      <Markdown>{row.rerating.whyItMatters}</Markdown>
+                    {row.Rerating_WhyItMatters ? (
+                      <Markdown>{row.Rerating_WhyItMatters}</Markdown>
                     ) : null}
                   </td>
                   <td className="col-narrow metrics-col-rerating">
-                    {row.rerating?.earningsDate ? (
-                      <time dateTime={row.rerating.earningsDate}>{row.rerating.earningsDate}</time>
+                    {row.Rerating_EarningsDate ? (
+                      <time dateTime={row.Rerating_EarningsDate}>{row.Rerating_EarningsDate}</time>
                     ) : null}
                   </td>
                 </>
@@ -86,19 +82,19 @@ export function KeyMetricsCombinedTable({ bundle }: Props) {
               {showResults ? (
                 <>
                   <td className="col-medium metrics-col-results">
-                    {row.earningsResult?.actualReported ? (
-                      <Markdown>{row.earningsResult.actualReported}</Markdown>
+                    {row.Results_ActualReported ? (
+                      <Markdown>{row.Results_ActualReported}</Markdown>
                     ) : null}
                   </td>
                   <td className="col-narrow metrics-col-results">
-                    {row.earningsResult?.hitTarget ? (
-                      <span className={hitTargetClass(row.earningsResult.hitTarget)}>
-                        {row.earningsResult.hitTarget}
+                    {row.Results_HitTarget ? (
+                      <span className={hitTargetClass(row.Results_HitTarget)}>
+                        {row.Results_HitTarget}
                       </span>
                     ) : null}
                   </td>
                   <td className="col-wide metrics-col-results">
-                    {row.earningsResult?.notes ? <Markdown>{row.earningsResult.notes}</Markdown> : null}
+                    {row.Results_Notes ? <Markdown>{row.Results_Notes}</Markdown> : null}
                   </td>
                 </>
               ) : null}

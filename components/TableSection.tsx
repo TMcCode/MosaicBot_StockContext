@@ -1,6 +1,5 @@
 import { loadTableBody } from "@/lib/data";
 import { TableSectionContent } from "@/components/TableSectionContent";
-import type { MetricsBundle } from "@/lib/keyMetricsCombined";
 import type { TableBody, TableIndexEntry } from "@/lib/types";
 
 type Props = {
@@ -9,7 +8,6 @@ type Props = {
   defaultOpen?: boolean;
   /** Preloaded/merged body (skips fetch when set). */
   body?: TableBody | null;
-  metricsBundle?: MetricsBundle;
 };
 
 /** Server-rendered table accordion (reads `.cache` / CDN via `loadTableBody`). */
@@ -18,7 +16,6 @@ export async function TableSection({
   buildId,
   defaultOpen = false,
   body: bodyProp,
-  metricsBundle,
 }: Props) {
   let error: string | null = null;
   const body =
@@ -38,7 +35,7 @@ export async function TableSection({
           <span className="section-title">{entry.display_name}</span>
           {body && body.rows.length > 1 ? (
             <span className="table-meta-chip muted">{body.rows.length} rows</span>
-          ) : entry.format === "multi_row" ? (
+          ) : entry.format === "multi_row" || entry.format === "metrics_combined" ? (
             <span className="table-meta-chip muted">Table</span>
           ) : null}
         </div>
@@ -47,7 +44,7 @@ export async function TableSection({
       <div className="table-accordion-body">
         {error ? <p className="muted">Could not load section ({error}).</p> : null}
         {!error && !body ? <p className="muted">No data for this section.</p> : null}
-        {body ? <TableSectionContent body={body} metricsBundle={metricsBundle} /> : null}
+        {body ? <TableSectionContent body={body} /> : null}
       </div>
     </details>
   );
