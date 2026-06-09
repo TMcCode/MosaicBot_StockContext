@@ -72,6 +72,14 @@ export function formatHomeMetric(sectionId: string, item: HomeFeedItem): string 
     return `${(m * 100).toFixed(1)}% wt`;
   }
 
+  if (
+    (sectionId === "ticker_updates_to_read" || sectionId === "theme_updates_to_read") &&
+    m > 0 &&
+    m <= 1
+  ) {
+    return `${(m * 100).toFixed(1)}% wt`;
+  }
+
   return null;
 }
 
@@ -135,6 +143,9 @@ export function homeFeedSecondaryLine(
   if (sectionId === "portfolio_themes" && sub.startsWith("Portfolio weight")) {
     return metricLabel ? null : sub;
   }
+  if (sectionId === "theme_updates_to_read" && sub.startsWith("Portfolio weight")) {
+    return null;
+  }
   return sub;
 }
 
@@ -145,12 +156,16 @@ export function showHomeFeedDate(sectionId: string): boolean {
 /** One-line legend under the panel title (home cards). */
 export function homeFeedPanelSubtitle(sectionId: string): string | null {
   switch (sectionId) {
+    case "ticker_updates_to_read":
+      return "Up to 10 shown · 20 max · tier → portfolio weight · mark read until next table edit";
+    case "theme_updates_to_read":
+      return "Up to 10 shown · 20 max · portfolio weight · mark read until next table edit";
     case "watchlist_themes":
       return "10D theme return · last table update";
     case "portfolio_themes":
       return "10D return or portfolio weight · last update";
     case "recently_reported":
-      return "10D price return · report date";
+      return "10D price return · report date (newest first, BMO then AMC)";
     case "upcoming_earnings":
       return "Next 14 days · portfolio weight when held";
     case "theme_10d_outperformers":
@@ -176,6 +191,15 @@ export const HOME_FEED_OVERFLOW_IDS = [
   "ticker_10d_underperformers",
 ] as const;
 
+export const UPDATES_TO_READ_SECTION_IDS = new Set([
+  "ticker_updates_to_read",
+  "theme_updates_to_read",
+]);
+
+export function isUpdatesToReadSection(sectionId: string): boolean {
+  return UPDATES_TO_READ_SECTION_IDS.has(sectionId);
+}
+
 export type HomeFeedOverflowId = (typeof HOME_FEED_OVERFLOW_IDS)[number];
 
 export function feedSectionHref(sectionId: string): string {
@@ -184,12 +208,16 @@ export function feedSectionHref(sectionId: string): string {
 
 export function homeFeedSectionDescription(sectionId: string): string {
   switch (sectionId) {
+    case "ticker_updates_to_read":
+      return "Coverage-universe tickers with text-table edits in the last 90 days (up to 20 ranked). Home shows 10 unread at a time. Mark read to dismiss until the next table publish.";
+    case "theme_updates_to_read":
+      return "Themes with text-table edits in the last 90 days (up to 20 ranked). Home shows 10 unread at a time. Mark read to dismiss until the next table publish.";
     case "watchlist_themes":
       return "Watchlist coverage themes sorted by last theme text-table update (20-day window on the home card). Percent is 10D theme return.";
     case "portfolio_themes":
       return "Portfolio tab themes sorted by total portfolio weight, then last theme text-table update.";
     case "recently_reported":
-      return "Automation-universe tickers that reported within the last 20 days (tier → weight → report date). Percent is 10D price return.";
+      return "Automation-universe tickers that reported within the last 20 days. Sorted by report date (newest first, BMO before AMC on the same day), then portfolio weight, tier, and market cap. Percent is 10D price return.";
     case "upcoming_earnings":
       return "Universe tickers reporting in the next 14 days (BMO before AMC on the same day). Portfolio weight chip when the ticker is on the Portfolio tab.";
     case "theme_10d_outperformers":
@@ -227,6 +255,8 @@ export function orderedHomeSections(sections: HomeFeedSection[] | undefined): Ho
     return [];
   }
   const order = [
+    "ticker_updates_to_read",
+    "theme_updates_to_read",
     "watchlist_themes",
     "portfolio_themes",
     "recently_reported",

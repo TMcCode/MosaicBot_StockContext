@@ -42,6 +42,26 @@ export async function upsertPageRead(
   }
 }
 
+export async function deletePageRead(
+  userId: string,
+  pageType: PageType,
+  pageKey: string,
+): Promise<void> {
+  const supabase = getBrowserSupabase();
+  if (!supabase) {
+    throw new Error("Supabase is not configured.");
+  }
+  const { error } = await supabase
+    .from("page_reads")
+    .delete()
+    .eq("user_id", userId)
+    .eq("page_type", pageType)
+    .eq("page_key", normalizePageKey(pageType, pageKey));
+  if (error) {
+    throw error;
+  }
+}
+
 export async function mergeLocalReadsIntoServer(userId: string): Promise<void> {
   const entries = localReadsForMerge();
   if (!entries.length) {

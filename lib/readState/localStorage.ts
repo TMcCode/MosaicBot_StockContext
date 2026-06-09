@@ -50,6 +50,12 @@ export function getLocalSeenBuildId(pageType: PageType, pageKey: string): string
   return readLocalReads()[storageKey(pageType, pageKey)];
 }
 
+export function clearLocalRead(pageType: PageType, pageKey: string): void {
+  const map = readLocalReads();
+  delete map[storageKey(pageType, normalizePageKey(pageType, pageKey))];
+  writeLocalReads(map);
+}
+
 export function clearLocalReads(): void {
   if (typeof window === "undefined") {
     return;

@@ -13,6 +13,7 @@ import { formatEventDateShort } from "@/lib/homeFeedDisplay";
 import { themeHref, tickerHref } from "@/lib/links";
 import type { RecentUpdatesMarquee, RecentUpdatesMarqueeItem } from "@/lib/types";
 
+import { WorkflowTagBadges } from "./WorkflowTagBadges";
 import styles from "./HomeRecentUpdatesMarquee.module.css";
 
 const LOOP_SECONDS = 280;
@@ -147,6 +148,7 @@ function MarqueeRow({
     const inner = (
       <>
         <span className={styles.chipName}>{item.label}</span>
+        {kind === "ticker" ? <WorkflowTagBadges tags={item.workflow_tags} className={styles.chipTags} /> : null}
         {dateLabel ? <span className={styles.chipDate}>{dateLabel}</span> : null}
       </>
     );

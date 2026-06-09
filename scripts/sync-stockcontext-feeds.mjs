@@ -16,6 +16,7 @@ const FEED_KEYS = [
   "search_index.v0.json",
   "feeds/home.v0.json",
   "feeds/recent_updates_marquee.v0.json",
+  "feeds/workflow_tags.v0.json",
 ];
 
 function ensureDir(filePath) {

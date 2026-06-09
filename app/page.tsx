@@ -3,6 +3,7 @@ import Link from "next/link";
 import { HomeFeedSection } from "@/components/HomeFeedSection";
 import { HomeHero } from "@/components/HomeHero";
 import { HomeRecentUpdatesMarquee } from "@/components/HomeRecentUpdatesMarquee";
+import { HomeUpdatesToReadRow } from "@/components/HomeUpdatesToReadRow";
 import { loadHomeFeeds, loadManifest, loadRecentUpdatesMarquee } from "@/lib/data";
 import { formatMarqueeAsOfLabel } from "@/lib/formatMarqueeAsOf";
 import { href, themeHref } from "@/lib/links";
@@ -34,6 +35,11 @@ export default async function HomePage() {
   const sections = orderedHomeSections(home?.sections);
   const legacyFeed = isLegacyUniverseFeed(sections);
   const showThemesBrowse = legacyFeed || sections.length === 0;
+  const updatesTicker = sections.find((s) => s.id === "ticker_updates_to_read");
+  const updatesTheme = sections.find((s) => s.id === "theme_updates_to_read");
+  const feedSections = sections.filter(
+    (s) => s.id !== "ticker_updates_to_read" && s.id !== "theme_updates_to_read",
+  );
 
   return (
     <>
@@ -61,7 +67,8 @@ export default async function HomePage() {
         </div>
       ) : (
         <div className="home-feed-grid">
-          {sections.map((section) => (
+          <HomeUpdatesToReadRow tickerSection={updatesTicker} themeSection={updatesTheme} />
+          {feedSections.map((section) => (
             <HomeFeedSection key={section.id} section={section} />
           ))}
         </div>
