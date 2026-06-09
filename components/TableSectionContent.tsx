@@ -9,9 +9,11 @@ import {
   isFooterColumn,
   isMetaColumn,
   isOverviewMetaColumn,
+  isCollapsibleTranscriptRowsTable,
   primaryMarkdownColumn,
   sentimentClass,
   tableColumnLayoutClass,
+  tableFooterBits,
   visibleDataColumns,
 } from "@/lib/tableDisplay";
 import {
@@ -24,34 +26,42 @@ import {
   parseTopDatasetEntries,
   sortThemeOverviewColumns,
 } from "@/lib/themeOverviewFormat";
+import {
+  isTickerBullBearColumn,
+  isTickerDetailedJsonColumn,
+  isTickerOverviewBody,
+  sortTickerOverviewColumns,
+  splitTickerOverviewBottomPair,
+  TICKER_OVERVIEW_BULL_ID,
+  TICKER_OVERVIEW_BEAR_ID,
+  TICKER_OVERVIEW_COMPETITORS_ID,
+} from "@/lib/tickerOverviewFormat";
+import { isMetricsCombinedTable } from "@/lib/keyMetricsCombined";
 
+import { CombinedMetricsSection } from "./CombinedMetricsSection";
 import { ForumWatchlistField } from "./ForumWatchlistField";
 import { Markdown } from "./Markdown";
 import { KeywordListField, SearchKeywordsField } from "./SearchKeywordsField";
+import { TickerStructuredJsonField } from "./TickerStructuredJsonField";
 import { TopDatasetsField } from "./TopDatasetsField";
+import { CollapsibleTranscriptRowsTable } from "./CollapsibleTranscriptRowsTable";
 
 export function TableSectionContent({ body }: { body: TableBody }) {
   const row = body.rows[0];
-  const footerBits: string[] = [];
-
-  if (body.format === "single_row" && row) {
-    for (const col of body.columns) {
-      if (!isFooterColumn(col.id)) continue;
-      const val = formatCellValue(col.id, row[col.id] ?? "");
-      if (!val || val === "False") continue;
-      if (col.id === "Source") footerBits.push(val);
-      else if (col.id === "_update_date") footerBits.push(`Updated ${formatCellValue(col.id, val)}`);
-    }
-  }
+  const footerBits = isMetricsCombinedTable(body) ? [] : tableFooterBits(body);
 
   return (
     <>
-      {body.format === "single_row" && row ? (
+      {isMetricsCombinedTable(body) ? (
+        <CombinedMetricsSection body={body} />
+      ) : body.format === "single_row" && row ? (
         isBullBearLayout(body) ? (
           <BullBearSingleRow body={body} row={row} />
         ) : (
           <OverviewSingleRow body={body} row={row} />
         )
+      ) : isCollapsibleTranscriptRowsTable(body) ? (
+        <CollapsibleTranscriptRowsTable body={body} />
       ) : (
         <MultiRowTable body={body} />
       )}
@@ -72,6 +82,9 @@ function overviewFieldDisplay(
   if (isSearchKeywordColumn(col.id) && col.id !== "SearchKeywordsNow") {
     return <KeywordListField raw={raw} />;
   }
+  if (isTickerDetailedJsonColumn(col.id)) {
+    return <TickerStructuredJsonField columnId={col.id} raw={raw} />;
+  }
   if (col.kind === "markdown") return <Markdown>{val || raw}</Markdown>;
   if (val.includes("\n")) return <span className="pre-line">{val}</span>;
   return val || raw;
@@ -81,27 +94,106 @@ function overviewShowsTopDatasets(row: Record<string, string>): boolean {
   return parseTopDatasetEntries(row).length > 0;
 }
 
+function OverviewFieldGrid({
+  cols,
+  row,
+}: {
+  cols: TableBody["columns"];
+  row: Record<string, string>;
+}) {
+  if (cols.length === 0) return null;
+  return (
+    <dl className="field-grid">
+      {cols.map((col) => {
+        const raw = formatCellValue(col.id, row[col.id] ?? "");
+        if (!raw || raw === "False") return null;
+        return (
+          <div key={col.id} className="field-item">
+            <dt>{formatColumnLabel(col.id, col.label)}</dt>
+            <dd>{overviewFieldDisplay(col, raw)}</dd>
+          </div>
+        );
+      })}
+    </dl>
+  );
+}
+
+function TickerBullBearPair({
+  row,
+  bullCol,
+  bearCol,
+}: {
+  row: Record<string, string>;
+  bullCol?: TableBody["columns"][number];
+  bearCol?: TableBody["columns"][number];
+}) {
+  const bullRaw = bullCol ? formatCellValue(bullCol.id, row[bullCol.id] ?? "") : "";
+  const bearRaw = bearCol ? formatCellValue(bearCol.id, row[bearCol.id] ?? "") : "";
+  if ((!bullRaw || bullRaw === "False") && (!bearRaw || bearRaw === "False")) {
+    return null;
+  }
+
+  return (
+    <div className="bull-bear-grid">
+      {bullCol && bullRaw && bullRaw !== "False" ? (
+        <div className="bull-bear-col bull-col">
+          <h3 className="block-label">{formatColumnLabel(bullCol.id, bullCol.label)}</h3>
+          <div className="overview-block-body">{overviewFieldDisplay(bullCol, bullRaw)}</div>
+        </div>
+      ) : null}
+      {bearCol && bearRaw && bearRaw !== "False" ? (
+        <div className="bull-bear-col bear-col">
+          <h3 className="block-label">{formatColumnLabel(bearCol.id, bearCol.label)}</h3>
+          <div className="overview-block-body">{overviewFieldDisplay(bearCol, bearRaw)}</div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function OverviewSingleRow({ body, row }: { body: TableBody; row: Record<string, string> }) {
   const primary = primaryMarkdownColumn(body);
   const hideSearchKeywordsNow = hasSplitSearchKeywordColumns(row);
   const hideGoogleTrendNow = hasSplitGoogleTrendColumns(row);
   const showTopDatasets = overviewShowsTopDatasets(row);
+  const tickerOverview = isTickerOverviewBody(body);
 
-  const others = sortThemeOverviewColumns(
-    visibleDataColumns(body).filter(
-      (c) =>
-        c.id !== primary?.id &&
-        !/^Bull|^Bear/i.test(c.id) &&
-        !isOverviewMetaColumn(c.id) &&
-        !isTopDatasetColumn(c.id) &&
-        !(c.id === "SearchKeywordsNow" && hideSearchKeywordsNow) &&
-        !(c.id === "GoogleTrendKeywordsNow" && hideGoogleTrendNow) &&
-        !(c.id === "TopDatasetsToTrack" && showTopDatasets),
-    ),
+  const filtered = visibleDataColumns(body).filter(
+    (c) =>
+      c.id !== primary?.id &&
+      !/^Bull\d|^Bear\d/i.test(c.id) &&
+      !isTickerBullBearColumn(c.id) &&
+      !isOverviewMetaColumn(c.id) &&
+      !isTopDatasetColumn(c.id) &&
+      !(c.id === "SearchKeywordsNow" && hideSearchKeywordsNow) &&
+      !(c.id === "GoogleTrendKeywordsNow" && hideGoogleTrendNow) &&
+      !(c.id === "TopDatasetsToTrack" && showTopDatasets),
   );
 
-  const fullWidth = others.filter((c) => isFullWidthOverviewColumn(c.id));
-  const gridCols = others.filter((c) => !isFullWidthOverviewColumn(c.id));
+  const sorted = tickerOverview
+    ? sortTickerOverviewColumns(filtered)
+    : sortThemeOverviewColumns(filtered);
+  const { main: overviewMain, bottomPair } = tickerOverview
+    ? splitTickerOverviewBottomPair(sorted)
+    : { main: sorted, bottomPair: [] };
+
+  const fullWidth = overviewMain.filter((c) => isFullWidthOverviewColumn(c.id));
+  const gridCols = overviewMain.filter((c) => !isFullWidthOverviewColumn(c.id));
+
+  const bullCol = tickerOverview
+    ? body.columns.find((c) => c.id === TICKER_OVERVIEW_BULL_ID)
+    : undefined;
+  const bearCol = tickerOverview
+    ? body.columns.find((c) => c.id === TICKER_OVERVIEW_BEAR_ID)
+    : undefined;
+
+  const competitorsIdx = tickerOverview
+    ? gridCols.findIndex((c) => c.id === TICKER_OVERVIEW_COMPETITORS_ID)
+    : -1;
+  const gridBeforeBullBear =
+    tickerOverview && competitorsIdx >= 0 ? gridCols.slice(0, competitorsIdx) : gridCols;
+  const gridAfterBullBear =
+    tickerOverview && competitorsIdx >= 0 ? gridCols.slice(competitorsIdx) : [];
 
   return (
     <div className="single-row-body overview-layout">
@@ -124,20 +216,12 @@ function OverviewSingleRow({ body, row }: { body: TableBody; row: Record<string,
           </div>
         </section>
       ) : null}
-      {gridCols.length > 0 ? (
-        <dl className="field-grid">
-          {gridCols.map((col) => {
-            const raw = formatCellValue(col.id, row[col.id] ?? "");
-            if (!raw || raw === "False") return null;
-            return (
-              <div key={col.id} className="field-item">
-                <dt>{formatColumnLabel(col.id, col.label)}</dt>
-                <dd>{overviewFieldDisplay(col, raw)}</dd>
-              </div>
-            );
-          })}
-        </dl>
+      <OverviewFieldGrid cols={gridBeforeBullBear} row={row} />
+      {tickerOverview ? (
+        <TickerBullBearPair row={row} bullCol={bullCol} bearCol={bearCol} />
       ) : null}
+      <OverviewFieldGrid cols={gridAfterBullBear} row={row} />
+      {bottomPair.length > 0 ? <OverviewFieldGrid cols={bottomPair} row={row} /> : null}
     </div>
   );
 }
@@ -196,7 +280,7 @@ function MultiRowTable({ body }: { body: TableBody }) {
         <thead>
           <tr>
             {cols.map((col) => (
-              <th key={col.id} className={tableColumnLayoutClass(col.id)}>
+              <th key={col.id} className={tableColumnLayoutClass(col.id, body)}>
                 {formatColumnLabel(col.id, col.label)}
               </th>
             ))}
@@ -207,7 +291,7 @@ function MultiRowTable({ body }: { body: TableBody }) {
             <tr key={i}>
               {cols.map((col) => {
                 const raw = formatCellValue(col.id, r[col.id] ?? "");
-                const cellClass = tableColumnLayoutClass(col.id);
+                const cellClass = tableColumnLayoutClass(col.id, body);
                 if (col.id === "CommentSentiment" && raw) {
                   return (
                     <td key={col.id} className={cellClass}>
