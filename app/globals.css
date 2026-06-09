@@ -1006,6 +1006,70 @@ a:hover {
   background: rgba(59, 77, 161, 0.04);
 }
 
+/* Combined key metrics + rerating + earnings results */
+.table-metrics-combined {
+  margin-top: 0.15rem;
+}
+
+.metrics-combined-table .metrics-combined-group-row th {
+  text-align: center;
+  font-size: 0.65rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding-top: 0.45rem;
+  padding-bottom: 0.35rem;
+  border-bottom: none;
+}
+
+.metrics-combined-table .metrics-group-krm {
+  border-right: 1px solid var(--border, rgba(38, 252, 214, 0.12));
+}
+
+.metrics-combined-table .metrics-group-rerating {
+  background: rgba(38, 252, 214, 0.06);
+  border-right: 1px solid rgba(38, 252, 214, 0.12);
+}
+
+.metrics-combined-table .metrics-group-results {
+  background: rgba(129, 140, 248, 0.07);
+}
+
+.metrics-combined-table th.metrics-col-rerating,
+.metrics-combined-table td.metrics-col-rerating {
+  background: rgba(38, 252, 214, 0.04);
+}
+
+.metrics-combined-table th.metrics-col-results,
+.metrics-combined-table td.metrics-col-results {
+  background: rgba(129, 140, 248, 0.05);
+}
+
+.table-wrap table.data-table tbody tr:hover td.metrics-col-rerating {
+  background: rgba(38, 252, 214, 0.07);
+}
+
+.table-wrap table.data-table tbody tr:hover td.metrics-col-results {
+  background: rgba(129, 140, 248, 0.09);
+}
+
+.st-theme[data-theme="light"] .st-surface .metrics-combined-table th.metrics-col-rerating,
+.st-theme[data-theme="light"] .st-surface .metrics-combined-table td.metrics-col-rerating {
+  background: rgba(42, 207, 200, 0.08);
+}
+
+.st-theme[data-theme="light"] .st-surface .metrics-combined-table th.metrics-col-results,
+.st-theme[data-theme="light"] .st-surface .metrics-combined-table td.metrics-col-results {
+  background: rgba(99, 102, 241, 0.07);
+}
+
+.st-theme[data-theme="light"] .st-surface .table-wrap table.data-table tbody tr:hover td.metrics-col-rerating {
+  background: rgba(42, 207, 200, 0.12);
+}
+
+.st-theme[data-theme="light"] .st-surface .table-wrap table.data-table tbody tr:hover td.metrics-col-results {
+  background: rgba(99, 102, 241, 0.11);
+}
+
 .section-header {
   display: flex;
   flex-wrap: wrap;

@@ -1,5 +1,6 @@
 import { loadTableBody } from "@/lib/data";
 import { TableSectionContent } from "@/components/TableSectionContent";
+import type { MetricsBundle } from "@/lib/keyMetricsCombined";
 import type { TableBody, TableIndexEntry } from "@/lib/types";
 
 type Props = {
@@ -8,10 +9,17 @@ type Props = {
   defaultOpen?: boolean;
   /** Preloaded/merged body (skips fetch when set). */
   body?: TableBody | null;
+  metricsBundle?: MetricsBundle;
 };
 
 /** Server-rendered table accordion (reads `.cache` / CDN via `loadTableBody`). */
-export async function TableSection({ entry, buildId, defaultOpen = false, body: bodyProp }: Props) {
+export async function TableSection({
+  entry,
+  buildId,
+  defaultOpen = false,
+  body: bodyProp,
+  metricsBundle,
+}: Props) {
   let error: string | null = null;
   const body =
     bodyProp !== undefined
@@ -39,7 +47,7 @@ export async function TableSection({ entry, buildId, defaultOpen = false, body: 
       <div className="table-accordion-body">
         {error ? <p className="muted">Could not load section ({error}).</p> : null}
         {!error && !body ? <p className="muted">No data for this section.</p> : null}
-        {body ? <TableSectionContent body={body} /> : null}
+        {body ? <TableSectionContent body={body} metricsBundle={metricsBundle} /> : null}
       </div>
     </details>
   );
