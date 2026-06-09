@@ -52,6 +52,7 @@ export type TickerMeta = {
   tables_index_url: string;
   chart_url?: string;
   financials_url?: string;
+  workflow_tags?: string[];
 };
 
 export type ThemeContentSummary = {
@@ -122,6 +123,7 @@ export type RecentUpdatesMarqueeItem = {
   sublabel?: string;
   updated_at: string;
   meta_url?: string;
+  workflow_tags?: string[];
 };
 
 export type RecentUpdatesMarquee = {
@@ -145,6 +147,8 @@ export type HomeFeeds = {
       metric?: number | null;
       event_at?: string | null;
       meta_url?: string;
+      /** Tables index build id — unread until user marks read at this version. */
+      content_build_id?: string;
     }[];
   }[];
 };
@@ -158,6 +162,9 @@ export type SearchTickerRow = {
   tier?: number;
   theme_names?: string[];
   meta_url?: string;
+  /** ISO 8601 — max of text table / note updates. */
+  last_updated_at?: string;
+  workflow_tags?: string[];
 };
 
 export type SearchThemeRow = {
@@ -169,6 +176,13 @@ export type SearchThemeRow = {
   constituents_with_data?: number;
   has_table_data?: boolean;
   meta_url?: string | null;
+};
+
+export type WorkflowTagsFeed = {
+  schema_version: number;
+  as_of: string;
+  build_id?: string;
+  tickers: Record<string, string[]>;
 };
 
 export type SearchIndex = {

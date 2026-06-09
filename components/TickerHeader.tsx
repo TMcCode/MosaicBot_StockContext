@@ -5,6 +5,7 @@ import type { Manifest, TickerMeta } from "@/lib/types";
 import { themeHref } from "@/lib/links";
 
 import { TierBadge } from "./TierBadge";
+import { WorkflowTagBadges } from "./WorkflowTagBadges";
 
 type Props = {
   symbol: string;
@@ -53,6 +54,7 @@ export function TickerHeader({ symbol, meta, manifest }: Props) {
           ) : null}
           <h1>{symbol}</h1>
           <TierBadge tier={meta.tier} />
+          <WorkflowTagBadges tags={meta.workflow_tags} />
           {weight ? <span className="badge badge-weight">{weight}</span> : null}
         </div>
         {meta.company_name && meta.company_name !== symbol ? (

@@ -8,6 +8,11 @@ import { href } from "@/lib/links";
 export default async function TickersPage() {
   const manifest = await loadManifest();
   const count = manifest?.stats?.total_tickers ?? manifest?.tickers.length;
+  const updatedAtBySymbol = Object.fromEntries(
+    (manifest?.tickers ?? [])
+      .filter((t) => t.last_updated_at)
+      .map((t) => [t.symbol.toUpperCase(), t.last_updated_at as string]),
+  );
 
   return (
     <>
@@ -23,7 +28,7 @@ export default async function TickersPage() {
       </p>
       <TextTableActivityStats manifest={manifest} />
       <section className="card">
-        <TickerBrowse />
+        <TickerBrowse updatedAtBySymbol={updatedAtBySymbol} />
       </section>
     </>
   );

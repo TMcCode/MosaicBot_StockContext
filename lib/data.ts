@@ -12,6 +12,7 @@ import type {
   ThemeMeta,
   ThemeTablesIndex,
   TickerMeta,
+  WorkflowTagsFeed,
 } from "./types";
 
 const CACHE_DIR = path.join(process.cwd(), STOCKCONTEXT_BUILD_CACHE_DIR);
@@ -49,6 +50,10 @@ export async function loadHomeFeeds(): Promise<HomeFeeds | null> {
 
 export async function loadRecentUpdatesMarquee(): Promise<RecentUpdatesMarquee | null> {
   return readJsonOrFetch<RecentUpdatesMarquee>("feeds/recent_updates_marquee.v0.json");
+}
+
+export async function loadWorkflowTagsFeed(): Promise<WorkflowTagsFeed | null> {
+  return readJsonOrFetch<WorkflowTagsFeed>("feeds/workflow_tags.v0.json");
 }
 
 export async function loadHomeFeedSection(

@@ -11,8 +11,8 @@ import {
 } from "react";
 
 import { useOptionalSupabaseAuth } from "@/components/SupabaseAuthProvider";
-import { fetchPageReads, mergeLocalReadsIntoServer, upsertPageRead } from "@/lib/readState/api";
-import { getLocalSeenBuildId, setLocalRead } from "@/lib/readState/localStorage";
+import { fetchPageReads, mergeLocalReadsIntoServer, upsertPageRead, deletePageRead } from "@/lib/readState/api";
+import { clearLocalRead, getLocalSeenBuildId, setLocalRead } from "@/lib/readState/localStorage";
 import { isUnread, normalizePageKey, storageKey, type PageType } from "@/lib/readState/types";
 
 type ReadStateContextValue = {
@@ -23,6 +23,10 @@ type ReadStateContextValue = {
     pageType: PageType,
     pageKey: string,
     buildId: string,
+  ) => Promise<{ ok: boolean; message?: string }>;
+  markUnread: (
+    pageType: PageType,
+    pageKey: string,
   ) => Promise<{ ok: boolean; message?: string }>;
   refresh: () => Promise<void>;
 };
@@ -120,15 +124,44 @@ export function ReadStateProvider({ children }: { children: ReactNode }) {
     [user, configured, refresh],
   );
 
+  const markUnread = useCallback(
+    async (pageType: PageType, pageKey: string) => {
+      const normalized = normalizePageKey(pageType, pageKey);
+      if (user && configured) {
+        const key = storageKey(pageType, normalized);
+        setServerMap((prev) => {
+          const next = new Map(prev);
+          next.delete(key);
+          return next;
+        });
+        try {
+          await deletePageRead(user.id, pageType, normalized);
+          return { ok: true };
+        } catch (e: unknown) {
+          await refresh();
+          return {
+            ok: false,
+            message: e instanceof Error ? e.message : "Could not clear read state.",
+          };
+        }
+      }
+      clearLocalRead(pageType, normalized);
+      setLocalVersion((v) => v + 1);
+      return { ok: true };
+    },
+    [user, configured, refresh],
+  );
+
   const value = useMemo<ReadStateContextValue>(
     () => ({
       ready,
       getSeenBuildId,
       isPageUnread,
       markRead,
+      markUnread,
       refresh,
     }),
-    [ready, getSeenBuildId, isPageUnread, markRead, refresh],
+    [ready, getSeenBuildId, isPageUnread, markRead, markUnread, refresh],
   );
 
   return <ReadStateContext.Provider value={value}>{children}</ReadStateContext.Provider>;

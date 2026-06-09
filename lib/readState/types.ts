@@ -16,6 +16,7 @@ export function storageKey(pageType: PageType, pageKey: string): string {
   return `${pageType}:${normalizePageKey(pageType, pageKey)}`;
 }
 
+/** True when the page has a build id and the user has not marked that build read. */
 export function isUnread(seenBuildId: string | undefined, currentBuildId: string | undefined): boolean {
   if (!currentBuildId) {
     return false;

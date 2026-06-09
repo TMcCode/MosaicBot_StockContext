@@ -46,6 +46,20 @@ export function PageReadControl({ pageType, pageKey, buildId }: Props) {
     }
   }, [readState, pageType, pageKey, buildId]);
 
+  const onMarkUnread = useCallback(async () => {
+    if (!readState) return;
+    setError(null);
+    setBusy(true);
+    try {
+      const result = await readState.markUnread(pageType, pageKey);
+      if (!result.ok) {
+        setError(result.message ?? "Could not save.");
+      }
+    } finally {
+      setBusy(false);
+    }
+  }, [readState, pageType, pageKey]);
+
   if (!buildId) {
     return null;
   }
@@ -71,7 +85,8 @@ export function PageReadControl({ pageType, pageKey, buildId }: Props) {
     }
   }
 
-  const canMark = ready && !busy && (unread || showUpdated) && Boolean(readState);
+  const canMarkRead = ready && !busy && (unread || showUpdated) && Boolean(readState);
+  const canMarkUnread = ready && !busy && !unread && wasReadBefore && Boolean(readState);
   const signInHref = href(`/sign-in?next=${encodeURIComponent(pathname || "/")}`);
 
   return (
@@ -83,7 +98,7 @@ export function PageReadControl({ pageType, pageKey, buildId }: Props) {
           Sign in
         </Link>
       ) : null}
-      {canMark ? (
+      {canMarkRead ? (
         <button
           type="button"
           className={`${styles.btn} ${styles.btnPrimary}`}
@@ -93,8 +108,15 @@ export function PageReadControl({ pageType, pageKey, buildId }: Props) {
           {busy ? "Saving…" : "Mark as read"}
         </button>
       ) : null}
-      {ready && !unread && !showUpdated && user ? (
-        <span className={`${styles.status} ${styles.statusRead}`}>Up to date</span>
+      {canMarkUnread ? (
+        <button
+          type="button"
+          className={styles.btn}
+          disabled={busy}
+          onClick={() => void onMarkUnread()}
+        >
+          {busy ? "Saving…" : "Mark unread"}
+        </button>
       ) : null}
     </div>
   );

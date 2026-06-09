@@ -4,19 +4,40 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 import { TierBadge } from "@/components/TierBadge";
+import { WorkflowTagBadges } from "@/components/WorkflowTagBadges";
 import { tickerHref } from "@/lib/links";
 import { collectSiteSearchHits, loadSiteSearchEngine, type SiteSearchEngine } from "@/lib/siteSearchHits";
-import type { SearchTickerRow } from "@/lib/types";
+import { formatDateOnly } from "@/lib/tableDisplay";
+import type { SearchTickerRow, WorkflowTagsFeed } from "@/lib/types";
+import { fetchPublicJsonText } from "@/lib/fetchPublicJson";
 
-export function TickerBrowse() {
+type Props = {
+  updatedAtBySymbol?: Record<string, string>;
+};
+
+export function TickerBrowse({ updatedAtBySymbol = {} }: Props) {
   const [query, setQuery] = useState("");
   const [engine, setEngine] = useState<SiteSearchEngine | null>(null);
+  const [workflowTagsBySymbol, setWorkflowTagsBySymbol] = useState<Record<string, string[]>>({});
   const [loadBusy, setLoadBusy] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
-    void loadSiteSearchEngine()
-      .then(setEngine)
+    void Promise.all([
+      loadSiteSearchEngine(),
+      fetchPublicJsonText("feeds/workflow_tags.v0.json").catch(() => null),
+    ])
+      .then(([searchEngine, tagsText]) => {
+        setEngine(searchEngine);
+        if (tagsText) {
+          const feed = JSON.parse(tagsText) as WorkflowTagsFeed;
+          const bySymbol: Record<string, string[]> = {};
+          for (const [symbol, tags] of Object.entries(feed.tickers ?? {})) {
+            bySymbol[symbol.toUpperCase()] = tags;
+          }
+          setWorkflowTagsBySymbol(bySymbol);
+        }
+      })
       .catch((e: unknown) => {
         setLoadError(e instanceof Error ? e.message : "Failed to load ticker index");
         setEngine(null);
@@ -68,7 +89,14 @@ export function TickerBrowse() {
       {!loadError && tickers.length > 0 ? (
         <ul className="grid grid-2 ticker-browse-list">
           {shown.map((t) => (
-            <TickerBrowseItem key={t.symbol} ticker={t} />
+            <TickerBrowseItem
+              key={t.symbol}
+              ticker={t}
+              lastUpdated={updatedAtBySymbol[t.symbol.toUpperCase()] ?? t.last_updated_at}
+              workflowTags={
+                workflowTagsBySymbol[t.symbol.toUpperCase()] ?? t.workflow_tags
+              }
+            />
           ))}
         </ul>
       ) : null}
@@ -79,7 +107,17 @@ export function TickerBrowse() {
   );
 }
 
-function TickerBrowseItem({ ticker: t }: { ticker: SearchTickerRow }) {
+function TickerBrowseItem({
+  ticker: t,
+  lastUpdated,
+  workflowTags,
+}: {
+  ticker: SearchTickerRow;
+  lastUpdated?: string;
+  workflowTags?: string[];
+}) {
+  const updatedLabel = formatDateOnly(lastUpdated);
+
   return (
     <li className="browse-row">
       <div className="browse-row-primary">
@@ -87,9 +125,15 @@ function TickerBrowseItem({ ticker: t }: { ticker: SearchTickerRow }) {
           <strong>{t.symbol}</strong>
         </Link>
         <TierBadge tier={t.tier} />
+        <WorkflowTagBadges tags={workflowTags} />
       </div>
       {t.company_name && t.company_name !== t.symbol ? (
         <div className="muted">{t.company_name}</div>
+      ) : null}
+      {updatedLabel ? (
+        <div className="muted browse-row-updated">
+          Updated <time dateTime={updatedLabel}>{updatedLabel}</time>
+        </div>
       ) : null}
     </li>
   );
