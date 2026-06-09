@@ -43,26 +43,66 @@ function cdnUrl(relative) {
   return `${STOCKCONTEXT_PUBLIC_BASE_URL}/${relative.replace(/^\//, "")}`;
 }
 
+function syncConcurrency() {
+  const n = Number(process.env.STOCKCONTEXT_SYNC_CONCURRENCY || 48);
+  return Number.isFinite(n) && n > 0 ? Math.min(n, 128) : 48;
+}
+
+/** Run async work over items with a fixed worker pool (CI sync is I/O-bound). */
+async function runConcurrent(items, fn) {
+  const list = [...items];
+  const total = list.length;
+  if (total === 0) return [];
+
+  const concurrency = Math.min(syncConcurrency(), total);
+  let index = 0;
+  let done = 0;
+  const results = new Array(total);
+
+  async function worker() {
+    while (true) {
+      const i = index;
+      index += 1;
+      if (i >= total) break;
+      results[i] = await fn(list[i], i);
+      done += 1;
+      if (done % 500 === 0 || done === total) {
+        console.log(`sync-stockcontext-ci: progress ${done}/${total}`);
+      }
+    }
+  }
+
+  await Promise.all(Array.from({ length: concurrency }, () => worker()));
+  return results;
+}
+
+function formatEtag(etag) {
+  const bare = String(etag || "").replace(/^"|"$/g, "");
+  return bare ? `"${bare}"` : "";
+}
+
 async function downloadFromCdn(relative, meta) {
   const url = cdnUrl(relative);
   const prev = meta.files[relative];
-  const head = await fetch(url, { method: "HEAD", cache: "no-store" });
-  if (head.status === 404) {
-    return false;
-  }
-  if (!head.ok) {
-    throw new Error(`CDN ${head.status} ${url}`);
-  }
-  const etag = (head.headers.get("etag") || "").replace(/^"|"$/g, "");
   const dest = path.join(CACHE, relative);
-  if (etag && prev?.etag === etag && fs.existsSync(dest)) {
+  const headers = { cache: "no-store" };
+  if (prev?.etag && fs.existsSync(dest)) {
+    const ifNoneMatch = formatEtag(prev.etag);
+    if (ifNoneMatch) headers["If-None-Match"] = ifNoneMatch;
+  }
+
+  const res = await fetch(url, { headers });
+  if (res.status === 404) {
     return false;
   }
-  const res = await fetch(url, { cache: "no-store" });
+  if (res.status === 304) {
+    return false;
+  }
   if (!res.ok) {
     throw new Error(`CDN ${res.status} ${url}`);
   }
   const text = await res.text();
+  const etag = (res.headers.get("etag") || "").replace(/^"|"$/g, "");
   ensureDir(dest);
   fs.writeFileSync(dest, text);
   meta.files[relative] = {
@@ -166,16 +206,25 @@ function collectUrls(obj, out = new Set()) {
   return out;
 }
 
-async function downloadMany(relativePaths, meta) {
+async function downloadMany(relativePaths, meta, { label = "batch" } = {}) {
+  const list = [...relativePaths].filter((rel) => typeof rel === "string" && !rel.startsWith("http"));
+  if (list.length === 0) return 0;
+
   let downloaded = 0;
-  for (const rel of relativePaths) {
-    if (rel.startsWith("http")) continue;
+  let unchanged = 0;
+  let errors = 0;
+  await runConcurrent(list, async (rel) => {
     try {
       if (await downloadRelative(rel, meta)) downloaded += 1;
+      else unchanged += 1;
     } catch (e) {
+      errors += 1;
       console.warn(`skip ${rel}: ${e?.message || e}`);
     }
-  }
+  });
+  console.log(
+    `sync-stockcontext-ci: ${label} ${list.length} files (${downloaded} updated, ${unchanged} unchanged, ${errors} skipped)`,
+  );
   return downloaded;
 }
 
@@ -215,7 +264,7 @@ async function syncTickerBundles(meta) {
       collectUrls(JSON.parse(fs.readFileSync(metaPath, "utf8")), bundleUrls);
     }
   }
-  downloaded += await downloadMany(bundleUrls, meta);
+  downloaded += await downloadMany(bundleUrls, meta, { label: "ticker bundles" });
 
   const bodyUrls = new Set();
   for (const sym of fs.readdirSync(tickersDir)) {
@@ -224,7 +273,7 @@ async function syncTickerBundles(meta) {
       collectUrls(JSON.parse(fs.readFileSync(indexPath, "utf8")), bodyUrls);
     }
   }
-  downloaded += await downloadMany(bodyUrls, meta);
+  downloaded += await downloadMany(bodyUrls, meta, { label: "ticker table bodies" });
   return downloaded;
 }
 
@@ -241,7 +290,7 @@ async function syncThemeBundles(meta) {
       collectUrls(JSON.parse(fs.readFileSync(metaPath, "utf8")), bundleUrls);
     }
   }
-  downloaded += await downloadMany(bundleUrls, meta);
+  downloaded += await downloadMany(bundleUrls, meta, { label: "theme bundles" });
 
   const bodyUrls = new Set();
   for (const slug of fs.readdirSync(themesDir)) {
@@ -250,7 +299,7 @@ async function syncThemeBundles(meta) {
       collectUrls(JSON.parse(fs.readFileSync(indexPath, "utf8")), bodyUrls);
     }
   }
-  downloaded += await downloadMany(bodyUrls, meta);
+  downloaded += await downloadMany(bodyUrls, meta, { label: "theme table bodies" });
   return downloaded;
 }
 
@@ -261,7 +310,13 @@ async function main() {
 
   const remoteSync = cdnSyncEnabled() || r2SyncEnabled();
   if (cdnSyncEnabled()) {
-    console.log("sync-stockcontext-ci: using public CDN (STOCKCONTEXT_SYNC_VIA_CDN=1)");
+    console.log(
+      `sync-stockcontext-ci: using public CDN (STOCKCONTEXT_SYNC_VIA_CDN=1, concurrency=${syncConcurrency()})`,
+    );
+  } else if (r2SyncEnabled()) {
+    console.log(
+      `sync-stockcontext-ci: using R2 API (STOCKTHEMES_SYNC_VIA_R2=1, concurrency=${syncConcurrency()})`,
+    );
   }
 
   if (remoteSync) {
@@ -273,22 +328,17 @@ async function main() {
     }
     const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
     const urls = collectUrls(manifest);
-    for (const key of [
+    const bootstrapKeys = [
       "search_index.v0.json",
       "feeds/home.v0.json",
       "feeds/recent_updates_marquee.v0.json",
+      "feeds/workflow_tags.v0.json",
       "themes/index.v0.json",
-    ]) {
+    ];
+    for (const key of bootstrapKeys) {
       urls.add(key);
     }
-    for (const key of [
-      "search_index.v0.json",
-      "feeds/home.v0.json",
-      "feeds/recent_updates_marquee.v0.json",
-      "themes/index.v0.json",
-    ]) {
-      await downloadRelative(key, meta);
-    }
+    downloaded += await downloadMany(bootstrapKeys, meta, { label: "bootstrap" });
     const homePath = path.join(CACHE, "feeds/home.v0.json");
     if (fs.existsSync(homePath)) {
       const home = JSON.parse(fs.readFileSync(homePath, "utf8"));
@@ -298,17 +348,11 @@ async function main() {
         }
       }
     }
-    if (fs.existsSync(path.join(CACHE, "search_index.v0.json"))) {
-      collectUrls(JSON.parse(fs.readFileSync(path.join(CACHE, "search_index.v0.json"), "utf8")), urls);
+    const searchIndexPath = path.join(CACHE, "search_index.v0.json");
+    if (fs.existsSync(searchIndexPath)) {
+      collectUrls(JSON.parse(fs.readFileSync(searchIndexPath, "utf8")), urls);
     }
-    for (const rel of urls) {
-      if (rel.startsWith("http")) continue;
-      try {
-        if (await downloadRelative(rel, meta)) downloaded += 1;
-      } catch (e) {
-        console.warn(`skip ${rel}: ${e?.message || e}`);
-      }
-    }
+    downloaded += await downloadMany(urls, meta, { label: "manifest walk" });
     downloaded += await syncTickerBundles(meta);
     downloaded += await syncThemeBundles(meta);
     const label = cdnSyncEnabled() ? "CDN" : "R2";

@@ -4,16 +4,14 @@ name: Deploy Stock Context to GitHub Pages
 on:
   push:
     branches: [main]
-  # Early: ~2:30 AM ET (dual UTC for DST). After 2 AM feeds-only publish (~5 min).
-  # Morning primary: ~9:00 AM ET — 3h after 6 AM full publish (room for heavy rebuilds).
-  # Morning safety: ~10:30 AM ET — rebuilds if publish finished after primary (as_of gate).
+  # Three daily passes (as_of skip gate skips full builds when unchanged):
+  #   ~2:30 AM ET — after 2 AM feeds-only publish
+  #   ~9:00 AM ET — primary morning, ~3h after 6 AM full publish
+  #   ~10:30 AM ET — safety net if publish finished after primary
   schedule:
     - cron: "30 6 * * *"
-    - cron: "30 7 * * *"
     - cron: "0 13 * * *"
-    - cron: "0 14 * * *"
     - cron: "30 15 * * *"
-    - cron: "30 16 * * *"
   workflow_dispatch:
     inputs:
       force_build:
@@ -66,9 +64,10 @@ jobs:
           key: stockcontext-public-v5
           restore-keys: stockcontext-public-v5
       - run: npm ci
-      - name: Sync public JSON from CDN
+      - name: Sync public JSON from R2
         env:
-          STOCKCONTEXT_SYNC_VIA_CDN: "1"
+          STOCKTHEMES_SYNC_VIA_R2: "1"
+          STOCKCONTEXT_SYNC_CONCURRENCY: "48"
         run: node scripts/sync-stockcontext-ci.mjs
       - name: Build static export
         env:

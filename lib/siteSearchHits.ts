@@ -32,6 +32,14 @@ export function buildThemeNameToSlug(index: SearchIndex): Map<string, string> {
   return out;
 }
 
+export function buildThemeSlugToName(index: SearchIndex): Map<string, string> {
+  const out = new Map<string, string>();
+  for (const t of index.themes ?? []) {
+    out.set(t.slug, t.name);
+  }
+  return out;
+}
+
 export function buildSiteSearchFuseRows(index: SearchIndex): SiteSearchFuseRow[] {
   const rows: SiteSearchFuseRow[] = [];
   for (const t of index.tickers) {
@@ -93,7 +101,7 @@ export function newSiteSearchFuse(index: SearchIndex, FuseCtor: typeof import("f
   }) as Fuse<SiteSearchFuseRow>;
 }
 
-async function loadSearchIndexRaw(): Promise<string> {
+async function fetchSearchIndexRaw(): Promise<string> {
   const urls = searchIndexFetchUrls();
   let lastErr: unknown;
 
@@ -116,9 +124,33 @@ async function loadSearchIndexRaw(): Promise<string> {
   throw lastErr instanceof Error ? lastErr : new Error("Failed to load search index");
 }
 
-export async function loadSiteSearchEngine(): Promise<SiteSearchEngine> {
-  const raw = await loadSearchIndexRaw();
-  const { default: FuseCtor } = await import("fuse.js");
-  const parsed = parseSiteSearchIndex(raw);
-  return { index: parsed, fuse: newSiteSearchFuse(parsed, FuseCtor) };
+let searchIndexCache: Promise<SearchIndex> | null = null;
+let searchEngineCache: Promise<SiteSearchEngine> | null = null;
+
+/** Fetch + parse search index only (no fuse.js). Cached for the browser session. */
+export function loadSearchIndex(): Promise<SearchIndex> {
+  if (!searchIndexCache) {
+    searchIndexCache = fetchSearchIndexRaw()
+      .then(parseSiteSearchIndex)
+      .catch((err: unknown) => {
+        searchIndexCache = null;
+        throw err;
+      });
+  }
+  return searchIndexCache;
+}
+
+export function loadSiteSearchEngine(): Promise<SiteSearchEngine> {
+  if (!searchEngineCache) {
+    searchEngineCache = loadSearchIndex()
+      .then(async (index) => {
+        const { default: FuseCtor } = await import("fuse.js");
+        return { index, fuse: newSiteSearchFuse(index, FuseCtor) };
+      })
+      .catch((err: unknown) => {
+        searchEngineCache = null;
+        throw err;
+      });
+  }
+  return searchEngineCache;
 }

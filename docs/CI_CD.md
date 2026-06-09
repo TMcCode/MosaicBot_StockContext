@@ -47,7 +47,7 @@ Run once after jobs are deployed (from MosaicBot repo):
 | **06:00** | `stockcontext-publish-am` | Full incremental publish after notes + themes |
 | **12:00** Mon–Fri | `stockcontext-post-transcript-midday` | Midday transcripts |
 
-**Website:** `deploy-pages.yml` runs on schedule ~**2:30 AM ET** (after early publish) and ~**9:00 AM ET** (primary morning, 3h after 6 AM publish), with a **~10:30 AM ET** safety pass if `manifest.as_of` changed later. Push to `main` always rebuilds.
+**Website:** `deploy-pages.yml` runs on schedule ~**2:30 AM**, ~**9:00 AM**, and ~**10:30 AM ET** (three daily passes; `as_of` skip gate avoids full rebuilds when unchanged). Push to `main` always rebuilds.
 
 **Alerts (MosaicBot):** `NOTIFY_EMAIL=… ./scripts/setup_stockcontext_publish_alerts.sh` — email on failed execution, run >2h, or no success in 10h.
 
@@ -57,12 +57,12 @@ Run once after jobs are deployed (from MosaicBot repo):
 00:00  pre-earnings (A)
 00:10  post-transcript (night, B)
 02:00  publish feeds + recent sync (early — A+B batch visible on site)
-02:30  GitHub Pages build (early, UTC crons 06:30 + 07:30)
+02:30  GitHub Pages build (early, UTC 06:30)
 03:00  earnings notes
 05:00  theme updates
 06:00  publish stockcontext/ JSON (morning — notes + themes)
-09:00  GitHub Pages build (morning primary, UTC 13:00 + 14:00)
-10:30  GitHub Pages safety net if publish finished after 9 AM (UTC 15:30 + 16:30)
+09:00  GitHub Pages build (morning primary, UTC 13:00)
+10:30  GitHub Pages safety net if publish finished after 9 AM (UTC 15:30)
 12:00  post-transcript (midday, weekdays)
 ```
 

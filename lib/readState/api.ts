@@ -2,6 +2,9 @@ import { clearLocalReads, localReadsForMerge } from "@/lib/readState/localStorag
 import { normalizePageKey, type PageReadRow, type PageType } from "@/lib/readState/types";
 import { getBrowserSupabase } from "@/lib/supabase/browserClient";
 
+/** Max rows shown on /account recent-reads list. */
+export const ACCOUNT_RECENT_READS_LIMIT = 30;
+
 export async function fetchPageReads(userId: string): Promise<PageReadRow[]> {
   const supabase = getBrowserSupabase();
   if (!supabase) {
@@ -11,6 +14,26 @@ export async function fetchPageReads(userId: string): Promise<PageReadRow[]> {
     .from("page_reads")
     .select("page_type, page_key, seen_build_id, read_at")
     .eq("user_id", userId);
+  if (error) {
+    throw error;
+  }
+  return (data ?? []) as PageReadRow[];
+}
+
+export async function fetchRecentPageReads(
+  userId: string,
+  limit = ACCOUNT_RECENT_READS_LIMIT,
+): Promise<PageReadRow[]> {
+  const supabase = getBrowserSupabase();
+  if (!supabase) {
+    return [];
+  }
+  const { data, error } = await supabase
+    .from("page_reads")
+    .select("page_type, page_key, seen_build_id, read_at")
+    .eq("user_id", userId)
+    .order("read_at", { ascending: false })
+    .limit(limit);
   if (error) {
     throw error;
   }

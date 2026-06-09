@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
+import { AccountRecentReads } from "@/components/AccountRecentReads";
 import { useSupabaseAuth } from "@/components/SupabaseAuthProvider";
 import { href } from "@/lib/links";
 
@@ -48,6 +49,9 @@ export default function AccountPage() {
           Read markers sync across devices. When a theme or ticker page gets a new{" "}
           <code>build_id</code>, it shows as unread again.
         </p>
+
+        <AccountRecentReads userId={user.id} />
+
         <p className={styles.footer}>
           <button
             type="button"

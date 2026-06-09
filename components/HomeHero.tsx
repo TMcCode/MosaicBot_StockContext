@@ -13,10 +13,11 @@ export function HomeHero({ buildId }: Props) {
   return (
     <header className={styles.hero}>
       <p className={styles.eyebrow}>{eyebrow}</p>
-      <h1 className={styles.title}>Portfolio earnings context, organized for every season</h1>
+      <h1 className={styles.title}>Institutional-grade research for everyone</h1>
       <p className={styles.punchline}>
-        <span className={styles.punchlineLead}>Review</span> thesis notes, bull and bear cases,
-        and theme research for holdings in your coverage universe.
+        <span className={styles.punchlineLead}>Get up to speed</span>{" "}
+        on what&apos;s moving your names — thesis, catalysts, and the equity research real
+        investors use.
       </p>
     </header>
   );

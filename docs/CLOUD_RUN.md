@@ -30,7 +30,7 @@ Alerts: `NOTIFY_EMAIL=… ./scripts/setup_stockcontext_publish_alerts.sh` (faile
 
 ## Website
 
-**Not** Cloud Run — **mosaicbot_stockcontext** `deploy-pages.yml` (GitHub Pages: ~2:30 AM ET after early publish; ~9 AM ET morning primary + ~10:30 AM safety net after 6 AM publish).
+**Not** Cloud Run — **mosaicbot_stockcontext** `deploy-pages.yml` (GitHub Pages: ~2:30 AM, ~9 AM, ~10:30 AM ET daily; skip gate when `as_of` unchanged).
 
 ## Resources
 

@@ -1,5 +1,5 @@
 .wrap {
-  max-width: 420px;
+  max-width: 520px;
   margin: 0 auto;
 }
 
@@ -71,4 +71,76 @@
 
 .footer {
   margin-top: 24px;
+}
+
+.readHistory {
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid var(--nav-border);
+}
+
+.readHistoryMeta {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: var(--nav-muted);
+}
+
+.readHistoryList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.readHistoryRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--nav-border);
+}
+
+.readHistoryBadgeTicker,
+.readHistoryBadgeTheme {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.readHistoryBadgeTicker {
+  color: var(--nav-accent);
+  background: rgba(38, 252, 214, 0.1);
+}
+
+.readHistoryBadgeTheme {
+  color: #a5b4fc;
+  background: rgba(129, 140, 248, 0.12);
+}
+
+.readHistoryLink {
+  font-weight: 600;
+  color: var(--nav-fg);
+  text-decoration: none;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.readHistoryLink:hover {
+  color: var(--nav-accent);
+}
+
+.readHistoryDate {
+  font-size: 13px;
+  color: var(--nav-muted);
+  margin-left: auto;
+  white-space: nowrap;
 }
