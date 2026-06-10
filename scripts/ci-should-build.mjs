@@ -1,11 +1,16 @@
 /**
- * GitHub Actions: skip Pages deploy when stockcontext manifest as_of unchanged.
+ * GitHub Actions: skip Pages deploy when stockcontext publish data unchanged.
+ * Compare manifest + home feed as_of (feeds-only publish can refresh home without manifest bump).
  */
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
-import { STOCKCONTEXT_MANIFEST_URL, STOCKCONTEXT_PREFIX } from "./lib/storageConfig.mjs";
+import {
+  STOCKCONTEXT_MANIFEST_URL,
+  STOCKCONTEXT_PREFIX,
+  STOCKCONTEXT_PUBLIC_BASE_URL,
+} from "./lib/storageConfig.mjs";
 import { downloadR2Object, r2SyncEnabled } from "./lib/r2Download.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -30,17 +35,28 @@ function readDeployedMeta() {
   }
 }
 
-async function fetchManifestAsOf() {
+async function fetchJsonAsOf(objectPath, cdnUrl) {
   if (r2SyncEnabled()) {
-    const data = JSON.parse(await downloadR2Object(`${STOCKCONTEXT_PREFIX}/manifest.v0.json`));
+    const data = JSON.parse(await downloadR2Object(`${STOCKCONTEXT_PREFIX}/${objectPath}`));
     return String(data.as_of || "");
   }
-  const res = await fetch(STOCKCONTEXT_MANIFEST_URL, { cache: "no-store" });
+  const res = await fetch(cdnUrl, { cache: "no-store" });
   if (!res.ok) {
-    throw new Error(`manifest HTTP ${res.status}`);
+    throw new Error(`${objectPath} HTTP ${res.status}`);
   }
   const data = JSON.parse(await res.text());
   return String(data.as_of || "");
+}
+
+async function fetchManifestAsOf() {
+  return fetchJsonAsOf("manifest.v0.json", STOCKCONTEXT_MANIFEST_URL);
+}
+
+async function fetchHomeFeedAsOf() {
+  return fetchJsonAsOf(
+    "feeds/home.v0.json",
+    `${STOCKCONTEXT_PUBLIC_BASE_URL}/feeds/home.v0.json`,
+  );
 }
 
 async function main() {
@@ -55,17 +71,30 @@ async function main() {
     return;
   }
 
-  const live = await fetchManifestAsOf();
+  const [manifestAsOf, homeFeedAsOf] = await Promise.all([fetchManifestAsOf(), fetchHomeFeedAsOf()]);
   const deployed = readDeployedMeta();
-  if (!deployed.manifestAsOf) {
+  if (!deployed.manifestAsOf && !deployed.homeFeedAsOf) {
     writeOutputs({ shouldBuild: true, reason: "no prior deploy meta" });
     return;
   }
-  if (live && live !== deployed.manifestAsOf) {
-    writeOutputs({ shouldBuild: true, reason: `as_of changed ${deployed.manifestAsOf} → ${live}` });
+  if (manifestAsOf && manifestAsOf !== deployed.manifestAsOf) {
+    writeOutputs({
+      shouldBuild: true,
+      reason: `manifest as_of changed ${deployed.manifestAsOf || "(none)"} → ${manifestAsOf}`,
+    });
     return;
   }
-  writeOutputs({ shouldBuild: false, reason: `manifest as_of unchanged (${live})` });
+  if (homeFeedAsOf && homeFeedAsOf !== deployed.homeFeedAsOf) {
+    writeOutputs({
+      shouldBuild: true,
+      reason: `home feed as_of changed ${deployed.homeFeedAsOf || "(none)"} → ${homeFeedAsOf}`,
+    });
+    return;
+  }
+  writeOutputs({
+    shouldBuild: false,
+    reason: `publish unchanged (manifest=${manifestAsOf}, home=${homeFeedAsOf})`,
+  });
 }
 
 main().catch((e) => {

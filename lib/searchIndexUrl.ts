@@ -9,7 +9,10 @@ function clientBasePath(): string {
   return raw.startsWith("/") ? raw : `/${raw}`;
 }
 
-/** CDN first; same-origin `public/search_index.v0.json` is fallback (local dev / CDN outage). */
+/**
+ * Production static export: same-origin `search_index.v0.json` (bundled at build).
+ * Dev: CDN first for freshness. CDN cross-origin fetch needs CORS on storage.stockthemes.ai.
+ */
 export function searchIndexFetchUrls(): string[] {
   const override = process.env.NEXT_PUBLIC_STOCKCONTEXT_SEARCH_INDEX_URL?.trim();
   if (override) {
@@ -21,5 +24,8 @@ export function searchIndexFetchUrls(): string[] {
     .trim()
     .replace(/\/$/, "");
   const upstream = `${cdn}/${DEFAULT_OBJECT}`;
+  if (process.env.NODE_ENV === "production") {
+    return [sameOrigin, upstream];
+  }
   return [upstream, sameOrigin];
 }

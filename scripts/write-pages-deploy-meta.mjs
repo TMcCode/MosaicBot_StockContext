@@ -13,12 +13,23 @@ if (!fs.existsSync(manifestPath)) {
   process.exit(0);
 }
 const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+const homePath = path.join(CACHE, "feeds", "home.v0.json");
+let homeFeedAsOf = "";
+if (fs.existsSync(homePath)) {
+  try {
+    const home = JSON.parse(fs.readFileSync(homePath, "utf8"));
+    homeFeedAsOf = home.as_of || "";
+  } catch {
+    homeFeedAsOf = "";
+  }
+}
 fs.mkdirSync(CACHE, { recursive: true });
 fs.writeFileSync(
   DEPLOY_META,
   JSON.stringify(
     {
       manifestAsOf: manifest.as_of || "",
+      homeFeedAsOf,
       buildId: manifest.build_id || "",
       writtenAt: new Date().toISOString(),
     },

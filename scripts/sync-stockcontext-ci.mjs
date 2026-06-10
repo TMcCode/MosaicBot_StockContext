@@ -230,25 +230,18 @@ async function downloadMany(relativePaths, meta, { label = "batch" } = {}) {
 
 function copySearchIndexToPublic() {
   const dest = path.join(root, "public", "search_index.v0.json");
-  if (process.env.CI === "true") {
-    if (fs.existsSync(dest)) {
-      fs.unlinkSync(dest);
-      console.log("sync-stockcontext-ci: removed public/search_index.v0.json (CDN-first)");
-    } else {
-      console.log(
-        "sync-stockcontext-ci: skip public/search_index.v0.json (browser fetches CDN first)",
-      );
-    }
-    return;
-  }
   const src = path.join(CACHE, "search_index.v0.json");
   if (!fs.existsSync(src)) {
+    if (fs.existsSync(dest)) {
+      fs.unlinkSync(dest);
+      console.warn("sync-stockcontext-ci: removed stale public/search_index.v0.json (missing in cache)");
+    }
     return;
   }
   const destDir = path.join(root, "public");
   fs.mkdirSync(destDir, { recursive: true });
   fs.copyFileSync(src, dest);
-  console.log("sync-stockcontext-ci: copied search_index.v0.json → public/ (local fallback)");
+  console.log("sync-stockcontext-ci: copied search_index.v0.json → public/ (static export for client search)");
 }
 
 /** After meta files exist, pull tables/index, chart, financials, and table bodies. */
