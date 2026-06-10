@@ -68,6 +68,9 @@ jobs:
         env:
           STOCKTHEMES_SYNC_VIA_R2: "1"
           STOCKCONTEXT_SYNC_CONCURRENCY: "48"
+          R2_ENDPOINT_URL: ${{ secrets.R2_ENDPOINT_URL }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
         run: node scripts/sync-stockcontext-ci.mjs
       - name: Build static export
         env:
