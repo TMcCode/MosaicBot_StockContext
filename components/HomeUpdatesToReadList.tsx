@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useMemo, useState } from "react";
 
+import { HomeFeedItemTitle } from "@/components/HomeFeedItemTitle";
 import { useReadState } from "@/components/ReadStateProvider";
 import { UPDATES_TO_READ_HOME_PREVIEW } from "@/components/HomeUpdatesToReadPanel";
 import {
@@ -79,13 +79,7 @@ export function HomeUpdatesToReadList({ section, pageType, homeLimit = UPDATES_T
             className={`home-feed-row home-feed-row-updates${muted ? " constituent-muted" : ""}`}
           >
             <div className="home-feed-row-main">
-              {itemHref ? (
-                <Link href={itemHref} className="home-feed-title">
-                  {item.label}
-                </Link>
-              ) : (
-                <span className="home-feed-title">{item.label}</span>
-              )}
+              <HomeFeedItemTitle label={item.label} href={itemHref} kind={kind} />
               {secondary ? (
                 <span className="home-feed-secondary muted">{secondary}</span>
               ) : null}

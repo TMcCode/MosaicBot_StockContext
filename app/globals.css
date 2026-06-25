@@ -841,6 +841,34 @@ a:hover {
   font-size: 0.875rem;
 }
 
+/* Markdown in research tables should match plain cell text, not body prose scale */
+.table-wrap table.data-table .prose {
+  font-size: inherit;
+  line-height: 1.45;
+}
+
+.table-wrap table.data-table .prose p {
+  margin: 0 0 0.5rem;
+}
+
+.table-wrap table.data-table .prose p:last-child {
+  margin-bottom: 0;
+}
+
+.table-wrap table.data-table .prose ul,
+.table-wrap table.data-table .prose ol {
+  margin: 0 0 0.5rem;
+  padding-left: 1.1rem;
+}
+
+.table-wrap table.data-table .prose li {
+  margin-bottom: 0.25rem;
+}
+
+.table-wrap table.data-table .prose li:last-child {
+  margin-bottom: 0;
+}
+
 /* Tables */
 .table-wrap {
   overflow-x: auto;
@@ -1300,6 +1328,35 @@ a:hover {
   text-overflow: ellipsis;
 }
 
+.home-feed-title-desktop {
+  display: inline;
+}
+
+.home-feed-title-mobile {
+  display: none;
+}
+
+.home-feed-title-mobile-text {
+  display: block;
+  font-weight: 600;
+  font-size: 0.875rem;
+  line-height: 1.2;
+}
+
+.home-feed-title-mobile-group {
+  display: block;
+  margin-top: 0.1rem;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.home-feed-title-mobile-plain {
+  font-weight: 600;
+  font-size: 0.875rem;
+  line-height: 1.2;
+}
+
 .home-feed-secondary {
   flex-shrink: 1;
   min-width: 0;
@@ -1377,10 +1434,59 @@ a:hover {
 @media (max-width: 640px) {
   .card {
     padding: 0.55rem 1rem 0.5rem;
+    border: none;
+    background: rgba(255, 255, 255, 0.025);
+  }
+
+  .st-theme[data-theme="light"] .st-surface .card {
+    background: rgba(59, 77, 161, 0.04);
   }
 
   .home-feed-panel {
     padding: 0.45rem 0.85rem 0.35rem;
+  }
+
+  .home-feed-row {
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
+    justify-content: flex-start;
+    gap: 0.75rem;
+    scrollbar-width: thin;
+  }
+
+  .home-feed-row-main {
+    overflow: visible;
+    flex: 0 1 auto;
+    min-width: min-content;
+    align-items: center;
+  }
+
+  .home-feed-row-meta {
+    margin-left: auto;
+    padding-left: 0.25rem;
+  }
+
+  .home-feed-title {
+    overflow: visible;
+    text-overflow: unset;
+    flex-shrink: 0;
+  }
+
+  .home-feed-title-desktop {
+    display: none;
+  }
+
+  .home-feed-title-mobile {
+    display: block;
+  }
+
+  .home-feed-secondary {
+    flex-shrink: 0;
+    overflow: visible;
+    text-overflow: unset;
   }
 
   .table-section {

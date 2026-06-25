@@ -1,5 +1,4 @@
-import Link from "next/link";
-
+import { HomeFeedItemTitle } from "@/components/HomeFeedItemTitle";
 import {
   formatEventDateShort,
   formatHomeMetric,
@@ -36,13 +35,7 @@ export function HomeFeedList({ section, compact = false }: Props) {
             className={`home-feed-row${muted ? " constituent-muted" : ""}`}
           >
             <div className="home-feed-row-main">
-              {itemHref ? (
-                <Link href={itemHref} className="home-feed-title">
-                  {item.label}
-                </Link>
-              ) : (
-                <span className="home-feed-title">{item.label}</span>
-              )}
+              <HomeFeedItemTitle label={item.label} href={itemHref} kind={kind} />
               {secondary ? (
                 <span className="home-feed-secondary muted">{secondary}</span>
               ) : null}
