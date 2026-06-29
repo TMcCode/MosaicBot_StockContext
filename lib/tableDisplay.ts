@@ -2,7 +2,8 @@ import type { TableBody } from "./types";
 
 /** Internal / audit columns — hidden from main table body. */
 export function isMetaColumn(id: string): boolean {
-  return id.startsWith("_") || id === "ticker";
+  const norm = id.trim().toLowerCase().replace(/\s+/g, "");
+  return id.startsWith("_") || id === "ticker" || norm === "is_change";
 }
 
 /** Shown in a small footer line under the section. */
