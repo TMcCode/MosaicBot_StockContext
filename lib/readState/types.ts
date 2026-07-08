@@ -26,3 +26,24 @@ export function isUnread(seenBuildId: string | undefined, currentBuildId: string
   }
   return seenBuildId !== currentBuildId;
 }
+
+export type FeedUnreadOptions = {
+  readAt?: string | null;
+  currentEventAt?: string | null;
+};
+
+/**
+ * Home-feed unread: build-id mismatch unless the user read at/after last content touch.
+ */
+export function isFeedItemUnread(
+  seenBuildId: string | undefined,
+  currentBuildId: string | undefined,
+  options?: FeedUnreadOptions,
+): boolean {
+  const eventAt = options?.currentEventAt?.trim();
+  const readAt = options?.readAt?.trim();
+  if (eventAt && readAt && readAt >= eventAt) {
+    return false;
+  }
+  return isUnread(seenBuildId, currentBuildId);
+}

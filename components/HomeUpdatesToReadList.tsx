@@ -32,7 +32,9 @@ export function HomeUpdatesToReadList({ section, pageType, homeLimit = UPDATES_T
 
   const unreadItems = useMemo(() => {
     const unread = section.items.filter((item) =>
-      readState?.isPageUnread(pageType, item.symbol, item.content_build_id) ?? true,
+      readState?.isPageUnread(pageType, item.symbol, item.content_build_id, {
+        currentEventAt: item.event_at,
+      }) ?? true,
     );
     return homeLimit > 0 ? unread.slice(0, homeLimit) : unread;
   }, [section.items, pageType, readState, homeLimit]);

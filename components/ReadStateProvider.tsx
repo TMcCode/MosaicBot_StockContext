@@ -13,12 +13,18 @@ import {
 import { useOptionalSupabaseAuth } from "@/components/SupabaseAuthProvider";
 import { fetchPageReads, mergeLocalReadsIntoServer, upsertPageRead, deletePageRead } from "@/lib/readState/api";
 import { clearLocalRead, getLocalSeenBuildId, setLocalRead } from "@/lib/readState/localStorage";
-import { isUnread, normalizePageKey, storageKey, type PageType } from "@/lib/readState/types";
+import { isFeedItemUnread, isUnread, normalizePageKey, storageKey, type PageType } from "@/lib/readState/types";
 
 type ReadStateContextValue = {
   ready: boolean;
   getSeenBuildId: (pageType: PageType, pageKey: string) => string | undefined;
-  isPageUnread: (pageType: PageType, pageKey: string, currentBuildId?: string) => boolean;
+  getReadAt: (pageType: PageType, pageKey: string) => string | undefined;
+  isPageUnread: (
+    pageType: PageType,
+    pageKey: string,
+    currentBuildId?: string,
+    options?: { currentEventAt?: string | null },
+  ) => boolean;
   markRead: (
     pageType: PageType,
     pageKey: string,
@@ -37,33 +43,46 @@ export function useReadState(): ReadStateContextValue | null {
   return useContext(ReadStateContext);
 }
 
-function rowsToMap(rows: { page_type: PageType; page_key: string; seen_build_id: string }[]): Map<string, string> {
-  const map = new Map<string, string>();
+function rowsToMaps(rows: { page_type: PageType; page_key: string; seen_build_id: string; read_at?: string }[]): {
+  seenBuildIds: Map<string, string>;
+  readAt: Map<string, string>;
+} {
+  const seenBuildIds = new Map<string, string>();
+  const readAt = new Map<string, string>();
   for (const row of rows) {
-    map.set(storageKey(row.page_type, row.page_key), row.seen_build_id);
+    const key = storageKey(row.page_type, row.page_key);
+    seenBuildIds.set(key, row.seen_build_id);
+    if (row.read_at) {
+      readAt.set(key, row.read_at);
+    }
   }
-  return map;
+  return { seenBuildIds, readAt };
 }
 
 export function ReadStateProvider({ children }: { children: ReactNode }) {
   const { configured, user, loading: authLoading } = useOptionalSupabaseAuth();
   const [ready, setReady] = useState(false);
-  const [serverMap, setServerMap] = useState<Map<string, string>>(() => new Map());
+  const [serverSeenMap, setServerSeenMap] = useState<Map<string, string>>(() => new Map());
+  const [serverReadAtMap, setServerReadAtMap] = useState<Map<string, string>>(() => new Map());
   const [localVersion, setLocalVersion] = useState(0);
 
   const refresh = useCallback(async () => {
     if (!configured || !user) {
-      setServerMap(new Map());
+      setServerSeenMap(new Map());
+      setServerReadAtMap(new Map());
       setReady(!authLoading);
       return;
     }
     try {
       await mergeLocalReadsIntoServer(user.id);
       const rows = await fetchPageReads(user.id);
-      setServerMap(rowsToMap(rows));
+      const { seenBuildIds, readAt } = rowsToMaps(rows);
+      setServerSeenMap(seenBuildIds);
+      setServerReadAtMap(readAt);
       setLocalVersion((v) => v + 1);
     } catch {
-      setServerMap(new Map());
+      setServerSeenMap(new Map());
+      setServerReadAtMap(new Map());
     } finally {
       setReady(true);
     }
@@ -78,19 +97,39 @@ export function ReadStateProvider({ children }: { children: ReactNode }) {
     (pageType: PageType, pageKey: string) => {
       const key = storageKey(pageType, pageKey);
       if (user && configured) {
-        return serverMap.get(key);
+        return serverSeenMap.get(key);
       }
       void localVersion;
       return getLocalSeenBuildId(pageType, pageKey);
     },
-    [user, configured, serverMap, localVersion],
+    [user, configured, serverSeenMap, localVersion],
+  );
+
+  const getReadAt = useCallback(
+    (pageType: PageType, pageKey: string) => {
+      const key = storageKey(pageType, pageKey);
+      if (user && configured) {
+        return serverReadAtMap.get(key);
+      }
+      return undefined;
+    },
+    [user, configured, serverReadAtMap],
   );
 
   const isPageUnread = useCallback(
-    (pageType: PageType, pageKey: string, currentBuildId?: string) => {
-      return isUnread(getSeenBuildId(pageType, pageKey), currentBuildId);
+    (pageType: PageType, pageKey: string, currentBuildId?: string, options?: { currentEventAt?: string | null }) => {
+      const key = storageKey(pageType, pageKey);
+      const seenBuildId = getSeenBuildId(pageType, pageKey);
+      const readAt = user && configured ? serverReadAtMap.get(key) : undefined;
+      if (options?.currentEventAt) {
+        return isFeedItemUnread(seenBuildId, currentBuildId, {
+          readAt,
+          currentEventAt: options.currentEventAt,
+        });
+      }
+      return isUnread(seenBuildId, currentBuildId);
     },
-    [getSeenBuildId],
+    [getSeenBuildId, user, configured, serverReadAtMap],
   );
 
   const markRead = useCallback(
@@ -101,9 +140,15 @@ export function ReadStateProvider({ children }: { children: ReactNode }) {
       }
       if (user && configured) {
         const key = storageKey(pageType, normalized);
-        setServerMap((prev) => {
+        const readAtIso = new Date().toISOString();
+        setServerSeenMap((prev) => {
           const next = new Map(prev);
           next.set(key, buildId);
+          return next;
+        });
+        setServerReadAtMap((prev) => {
+          const next = new Map(prev);
+          next.set(key, readAtIso);
           return next;
         });
         try {
@@ -129,7 +174,12 @@ export function ReadStateProvider({ children }: { children: ReactNode }) {
       const normalized = normalizePageKey(pageType, pageKey);
       if (user && configured) {
         const key = storageKey(pageType, normalized);
-        setServerMap((prev) => {
+        setServerSeenMap((prev) => {
+          const next = new Map(prev);
+          next.delete(key);
+          return next;
+        });
+        setServerReadAtMap((prev) => {
           const next = new Map(prev);
           next.delete(key);
           return next;
@@ -156,12 +206,13 @@ export function ReadStateProvider({ children }: { children: ReactNode }) {
     () => ({
       ready,
       getSeenBuildId,
+      getReadAt,
       isPageUnread,
       markRead,
       markUnread,
       refresh,
     }),
-    [ready, getSeenBuildId, isPageUnread, markRead, markUnread, refresh],
+    [ready, getSeenBuildId, getReadAt, isPageUnread, markRead, markUnread, refresh],
   );
 
   return <ReadStateContext.Provider value={value}>{children}</ReadStateContext.Provider>;

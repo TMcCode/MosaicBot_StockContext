@@ -32,7 +32,13 @@ The static app resolves assets as `{DATA_BASE_URL}{relative_path}` — e.g.
 | `text_tables/Transcript_Completion_Ledger.parquet` | Dedup post-earnings transcript runs |
 | `text_tables/Ticker_Default_Theme.parquet` | Manual default theme per ticker |
 | `text_tables/Theme_Refresh_State.parquet` | Last full theme refresh (T1/T2) |
+| `text_tables/Theme_Burst_State.parquet` | Per-theme burst summary (distinct 90d count, reset, overflow) |
+| `text_tables/Theme_Burst_Ticker_Updates.parquet` | Rolling constituent update events for burst counting |
 | `text_tables/Theme_T1_Pending.parquet` | One row per theme awaiting nightly T1 (deduped from B) |
+| `text_tables/Theme_T1_Onboarding_Queue.parquet` | T1 priority bands 1–6 (portfolio diff + burst overflow) |
+| `text_tables/Portfolio_Onboarding_State.parquet` | Last known Portfolio tab rows (diff baseline) |
+| `text_tables/Portfolio_Onboarding_Watchlist_State.parquet` | Last known watchlist theme names |
+| `text_tables/Portfolio_Onboarding_Events.parquet` | Portfolio/watchlist onboarding events (`pending` → `done` / `expired`) |
 | `text_tables/Automation_Queues.parquet` | Pre/post/theme queues |
 | `text_tables/Automation_Gemini_Daily_Spend.parquet` | Daily Gemini pool (ET calendar day) |
 | `text_tables/Automation_Config.parquet` | Admin-editable daily cap (`gemini_daily_cap_usd`); falls back to `AUTOMATION_GEMINI_DAILY_CAP_USD` env |

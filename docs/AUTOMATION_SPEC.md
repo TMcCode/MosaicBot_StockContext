@@ -6,7 +6,8 @@
 **Public site:** GitHub Pages from this repo  
 **Data plane:** Same R2 bucket as admin (`mosaic_themes` via `storage_compat`)  
 **Implementation playbook:** [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)  
-**Last updated:** 2026-06-01
+**Portfolio onboarding (2026-06):** Spec lives in MosaicBot repo — `MosaicBotMain_Local_Dev/docs/PORTFOLIO_ONBOARDING_AUTOMATION.md` (B/T1/T2 priority, diff, caps 30/8/8).  
+**Last updated:** 2026-06-25
 
 ---
 
