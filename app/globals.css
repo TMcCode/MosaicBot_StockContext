@@ -296,6 +296,23 @@ a:hover {
   margin: 0;
 }
 
+.theme-stockthemes-paren {
+  font-size: 0.55em;
+  font-weight: 500;
+  letter-spacing: 0;
+  white-space: nowrap;
+  color: var(--text-muted, var(--muted));
+}
+
+.theme-stockthemes-paren a {
+  color: var(--accent, #2acfc8);
+  text-decoration: none;
+}
+
+.theme-stockthemes-paren a:hover {
+  text-decoration: underline;
+}
+
 .theme-last-updated {
   margin: 0;
   font-size: 0.8125rem;

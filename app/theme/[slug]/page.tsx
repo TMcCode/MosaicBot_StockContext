@@ -10,7 +10,7 @@ import {
   loadThemeMeta,
   loadThemeTablesIndex,
 } from "@/lib/data";
-import { href, tickerHref } from "@/lib/links";
+import { href, stockthemesThemeUrl, tickerHref } from "@/lib/links";
 import { formatDateOnly } from "@/lib/tableDisplay";
 import {
   formatThemeContentStats,
@@ -79,7 +79,20 @@ export default async function ThemePage({ params }: Props) {
         {meta.name}
       </p>
       <div className="theme-page-header">
-        <h1>{meta.name}</h1>
+        <h1>
+          {meta.name}{" "}
+          <span className="theme-stockthemes-paren">
+            (
+            <a
+              href={stockthemesThemeUrl(slug)}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              stockthemes.ai
+            </a>
+            )
+          </span>
+        </h1>
         {lastUpdated ? (
           <p className="theme-last-updated muted">
             <span className="theme-last-updated-label">Last updated</span>

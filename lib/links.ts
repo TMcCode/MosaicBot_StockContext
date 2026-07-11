@@ -17,6 +17,12 @@ export function themeHref(slug: string): string {
   return href(`/theme/${slug}`);
 }
 
+/** Sister-site theme page on stockthemes.ai (no fetch — slug is already known). */
+export function stockthemesThemeUrl(slug: string): string {
+  const s = String(slug || "").trim();
+  return `https://stockthemes.ai/themes/${encodeURIComponent(s)}`;
+}
+
 /** Browser path for `public/` files when Next `basePath` is set (e.g. GitHub Pages). */
 export function publicAssetPath(path: string): string {
   const raw = (process.env.NEXT_PUBLIC_BASE_PATH ?? "").trim().replace(/\/$/, "");
