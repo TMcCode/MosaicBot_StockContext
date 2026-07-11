@@ -99,7 +99,7 @@ export default async function ThemePage({ params }: Props) {
               target="_blank"
               rel="noopener noreferrer"
             >
-              stockthemes.ai
+              view performance
             </a>
             )
           </span>

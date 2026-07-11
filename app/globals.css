@@ -456,6 +456,13 @@ a:hover {
 
 .theme-chip-static {
   cursor: default;
+  color: var(--text-muted, #9aa0a6);
+  background: rgba(154, 160, 166, 0.12);
+  opacity: 0.9;
+}
+
+.theme-chip-static:hover {
+  background: rgba(154, 160, 166, 0.12);
 }
 
 /* Badges */
@@ -1618,4 +1625,13 @@ a:hover {
 
 .st-theme[data-theme="light"] .st-surface .theme-chip:hover {
   background: rgba(42, 207, 200, 0.2);
+}
+
+.st-theme[data-theme="light"] .st-surface .theme-chip-static {
+  color: var(--text-muted, #6b7280);
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.st-theme[data-theme="light"] .st-surface .theme-chip-static:hover {
+  background: rgba(0, 0, 0, 0.05);
 }
