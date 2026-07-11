@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 
 import { fetchPublicJsonText, STOCKCONTEXT_BUILD_CACHE_DIR } from "./stockcontextBuildCache";
+import { themeHasPublishedPage } from "./themePage";
 import type {
   HomeFeeds,
   Manifest,
@@ -151,9 +152,7 @@ export function allThemeSlugs(): string[] {
   if (!m?.themes?.length) {
     return [];
   }
-  return m.themes
-    .filter((t) => t.has_table_data !== false && t.meta_url)
-    .map((t) => t.slug);
+  return m.themes.filter(themeHasPublishedPage).map((t) => t.slug);
 }
 
 export function sitePaths() {

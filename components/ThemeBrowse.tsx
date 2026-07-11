@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import { themeHref } from "@/lib/links";
+import { themeHasPublishedPage } from "@/lib/themePage";
 import type { ThemeIndexEntry } from "@/lib/types";
 
 type Props = {
@@ -30,7 +31,7 @@ export function ThemeBrowse({ themes }: Props) {
     return fuse.search(q).map((r) => r.item);
   }, [query, themes, fuse]);
 
-  const withData = themes.filter((t) => t.has_table_data !== false && t.meta_url).length;
+  const withData = themes.filter(themeHasPublishedPage).length;
 
   return (
     <>
@@ -47,7 +48,7 @@ export function ThemeBrowse({ themes }: Props) {
       </p>
       <ul className="grid grid-2 ticker-browse-list">
         {shown.map((theme) => {
-          const hasPage = theme.has_table_data !== false && theme.meta_url;
+          const hasPage = themeHasPublishedPage(theme);
           return (
             <li key={theme.slug} className={hasPage ? undefined : "constituent-muted"}>
               {hasPage ? (

@@ -8,6 +8,7 @@ import { loadHomeFeeds, loadManifest, loadRecentUpdatesMarquee } from "@/lib/dat
 import { formatMarqueeAsOfLabel } from "@/lib/formatMarqueeAsOf";
 import { href, themeHref } from "@/lib/links";
 import { isLegacyUniverseFeed, orderedHomeSections } from "@/lib/homeFeedDisplay";
+import { themeHasPublishedPage } from "@/lib/themePage";
 
 export default async function HomePage() {
   const [manifest, home, recentMarquee] = await Promise.all([
@@ -83,20 +84,21 @@ export default async function HomePage() {
             </Link>
           </div>
           <p className="muted">
-            {manifest.stats?.themes_with_data ?? manifest.themes.filter((t) => t.meta_url).length}{" "}
+            {manifest.stats?.themes_with_data ??
+              manifest.themes.filter(themeHasPublishedPage).length}{" "}
             with research notes
           </p>
           <ul className="grid grid-2">
             {[...manifest.themes]
               .sort((a, b) => {
-                const aHas = a.has_table_data !== false && a.meta_url ? 0 : 1;
-                const bHas = b.has_table_data !== false && b.meta_url ? 0 : 1;
+                const aHas = themeHasPublishedPage(a) ? 0 : 1;
+                const bHas = themeHasPublishedPage(b) ? 0 : 1;
                 if (aHas !== bHas) return aHas - bHas;
                 return a.name.localeCompare(b.name);
               })
               .slice(0, 24)
               .map((theme) => {
-                const hasPage = theme.has_table_data !== false && theme.meta_url;
+                const hasPage = themeHasPublishedPage(theme);
                 return (
                   <li key={theme.slug} className={hasPage ? undefined : "constituent-muted"}>
                     {hasPage ? (

@@ -1,6 +1,7 @@
 import type Fuse from "fuse.js";
 
 import { searchIndexFetchUrls } from "@/lib/searchIndexUrl";
+import { themeHasPublishedPage } from "@/lib/themePage";
 import type { SearchIndex, SearchThemeRow, SearchTickerRow } from "@/lib/types";
 
 export type SiteSearchFuseRow =
@@ -27,7 +28,9 @@ export function parseSiteSearchIndex(raw: string): SearchIndex {
 export function buildThemeNameToSlug(index: SearchIndex): Map<string, string> {
   const out = new Map<string, string>();
   for (const t of index.themes ?? []) {
-    out.set(t.name, t.slug);
+    if (themeHasPublishedPage(t)) {
+      out.set(t.name, t.slug);
+    }
   }
   return out;
 }

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { resolveTickerLogoUrl } from "@/lib/logoUrl";
 import type { Manifest, TickerMeta } from "@/lib/types";
 import { themeHref } from "@/lib/links";
+import { themeHasPublishedPage } from "@/lib/themePage";
 
 import { TierBadge } from "./TierBadge";
 import { WorkflowTagBadges } from "./WorkflowTagBadges";
@@ -13,17 +14,21 @@ type Props = {
   manifest: Manifest | null;
 };
 
-function themeLink(manifest: Manifest | null, themeName: string) {
-  const slug = manifest?.themes.find((t) => t.name === themeName)?.slug;
-  if (slug) {
+function themeChip(manifest: Manifest | null, themeName: string) {
+  const entry = manifest?.themes.find((t) => t.name === themeName);
+  if (entry && themeHasPublishedPage(entry)) {
     return (
-      <Link key={themeName} href={themeHref(slug)} className="theme-chip">
+      <Link key={themeName} href={themeHref(entry.slug)} className="theme-chip">
         {themeName}
       </Link>
     );
   }
   return (
-    <span key={themeName} className="theme-chip theme-chip-static">
+    <span
+      key={themeName}
+      className="theme-chip theme-chip-static"
+      title="Theme notes not published yet"
+    >
       {themeName}
     </span>
   );
@@ -63,7 +68,7 @@ export function TickerHeader({ symbol, meta, manifest }: Props) {
       </div>
       {meta.themes?.length ? (
         <div className="theme-chips">
-          {meta.themes.map((name) => themeLink(manifest, name))}
+          {meta.themes.map((name) => themeChip(manifest, name))}
         </div>
       ) : null}
     </header>

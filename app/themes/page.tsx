@@ -4,6 +4,7 @@ import { TextTableActivityStats } from "@/components/TextTableActivityStats";
 import { ThemeBrowse } from "@/components/ThemeBrowse";
 import { loadManifest } from "@/lib/data";
 import { href } from "@/lib/links";
+import { themeHasPublishedPage } from "@/lib/themePage";
 
 export default async function ThemesPage() {
   const manifest = await loadManifest();
@@ -20,13 +21,13 @@ export default async function ThemesPage() {
   }
 
   const themes = [...manifest.themes].sort((a, b) => {
-    const aHas = a.has_table_data !== false && a.meta_url ? 0 : 1;
-    const bHas = b.has_table_data !== false && b.meta_url ? 0 : 1;
+    const aHas = themeHasPublishedPage(a) ? 0 : 1;
+    const bHas = themeHasPublishedPage(b) ? 0 : 1;
     if (aHas !== bHas) return aHas - bHas;
     return a.name.localeCompare(b.name);
   });
 
-  const withData = themes.filter((t) => t.has_table_data !== false && t.meta_url).length;
+  const withData = themes.filter(themeHasPublishedPage).length;
 
   return (
     <>

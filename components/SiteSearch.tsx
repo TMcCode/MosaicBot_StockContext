@@ -12,6 +12,7 @@ import {
   type SiteSearchEngine,
   type SiteSearchHit,
 } from "@/lib/siteSearchHits";
+import { themeHasPublishedPage } from "@/lib/themePage";
 import type { SearchTickerRow } from "@/lib/types";
 
 import styles from "./SiteSearch.module.css";
@@ -97,7 +98,7 @@ export function SiteSearch() {
   const goToHit = useCallback(
     (h: SiteSearchHit) => {
       if (h.kind === "theme") {
-        if (h.ref.has_table_data === false || !h.ref.meta_url) {
+        if (!themeHasPublishedPage(h.ref)) {
           return;
         }
         router.push(themeHref(h.ref.slug));
@@ -266,20 +267,16 @@ export function SiteSearch() {
                   return (
                     <li key={h.key} role="presentation">
                       <Link
-                        href={
-                          h.ref.has_table_data !== false && h.ref.meta_url
-                            ? themeHref(h.ref.slug)
-                            : "#"
-                        }
-                        className={`${styles.row} ${h.ref.has_table_data === false || !h.ref.meta_url ? styles.mutedHit : ""}`}
+                        href={themeHasPublishedPage(h.ref) ? themeHref(h.ref.slug) : "#"}
+                        className={`${styles.row} ${!themeHasPublishedPage(h.ref) ? styles.mutedHit : ""}`}
                         prefetch={false}
                         onMouseEnter={() => {
-                          if (h.ref.meta_url) {
+                          if (themeHasPublishedPage(h.ref)) {
                             prefetchHref(themeHref(h.ref.slug));
                           }
                         }}
                         onFocus={() => {
-                          if (h.ref.meta_url) {
+                          if (themeHasPublishedPage(h.ref)) {
                             prefetchHref(themeHref(h.ref.slug));
                           }
                         }}
@@ -287,7 +284,7 @@ export function SiteSearch() {
                         role="option"
                         aria-selected={i === cursor}
                         onClick={(e) => {
-                          if (h.ref.has_table_data === false || !h.ref.meta_url) {
+                          if (!themeHasPublishedPage(h.ref)) {
                             e.preventDefault();
                             return;
                           }
@@ -301,7 +298,7 @@ export function SiteSearch() {
                         </div>
                         <div className={styles.rowSub}>
                           {h.ref.ticker_count != null ? `${h.ref.ticker_count} tickers` : null}
-                          {h.ref.has_table_data === false || !h.ref.meta_url ? (
+                          {!themeHasPublishedPage(h.ref) ? (
                             <span> · no theme notes yet</span>
                           ) : null}
                         </div>
