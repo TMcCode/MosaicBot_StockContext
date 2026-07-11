@@ -843,7 +843,7 @@ a:hover {
 
 /* Markdown in research tables should match plain cell text, not body prose scale */
 .table-wrap table.data-table .prose {
-  font-size: inherit;
+  font-size: 1em; /* explicit em — inherit can lose to .prose 0.9375rem in some engines */
   line-height: 1.45;
 }
 
@@ -882,6 +882,13 @@ a:hover {
   border-collapse: collapse;
   font-size: 0.875rem;
   table-layout: auto;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+.metrics-combined-table .metrics-metric-name {
+  font-weight: 600;
+  font-size: 1em;
 }
 
 .table-wrap table.data-table th,
@@ -1522,6 +1529,36 @@ a:hover {
 
   .table-preview {
     overflow-wrap: anywhere;
+  }
+
+  /* Dense research tables: body text was oversized vs headers on narrow screens */
+  .table-wrap table.data-table {
+    font-size: 0.75rem;
+  }
+
+  .table-wrap table.data-table th {
+    font-size: 0.625rem;
+  }
+
+  .table-wrap table.data-table th,
+  .table-wrap table.data-table td {
+    padding: 0.5rem 0.55rem;
+  }
+
+  .table-wrap table.data-table th.col-medium,
+  .table-wrap table.data-table td.col-medium {
+    min-width: 5.25rem;
+    max-width: 10rem;
+  }
+
+  .table-wrap table.data-table th.col-wide,
+  .table-wrap table.data-table td.col-wide {
+    min-width: 14rem;
+    max-width: 22rem;
+  }
+
+  .metrics-combined-table .metrics-combined-group-row th {
+    font-size: 0.6rem;
   }
 
   h1 {

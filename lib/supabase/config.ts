@@ -15,14 +15,3 @@ export function getSupabasePublicConfig(): SupabasePublicConfig | null {
   }
   return { url, anonKey };
 }
-
-/**
- * Cookie path for `@supabase/ssr` browser client. Align with Next `basePath` on GitHub Pages.
- */
-export function getSupabaseBrowserCookiePath(): string {
-  const raw = (process.env.NEXT_PUBLIC_BASE_PATH ?? "").trim().replace(/\/$/, "");
-  if (!raw) {
-    return "/";
-  }
-  return raw.startsWith("/") ? raw : `/${raw}`;
-}

@@ -56,7 +56,7 @@ export function KeyMetricsCombinedTable({ body }: Props) {
           {rows.map((row, i) => (
             <tr key={`${row.Metric}-${i}`}>
               <td className="col-medium">
-                <strong>{row.Metric}</strong>
+                <span className="metrics-metric-name">{row.Metric}</span>
               </td>
               <td className="col-narrow">{row["Last Period"]}</td>
               <td className="col-wide metrics-col-krm">

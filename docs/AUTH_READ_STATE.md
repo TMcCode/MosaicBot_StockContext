@@ -9,10 +9,12 @@ Stock Context uses the **same Supabase project** as [stockthemes.ai](https://sto
    - `https://stockcontext.info/**`
    - `https://tmccode.github.io/MosaicBot_StockContext/**` (legacy until retired)
    - `http://localhost:3000/**`
-3. Copy **Project URL** + **anon key** into `.env.local` and GitHub repo **Variables**:
+3. **Authentication → Providers** — enable **Google** (shared with stockthemes.ai). Optional: GitHub via `NEXT_PUBLIC_AUTH_OAUTH_PROVIDERS=google,github`.
+4. Copy **Project URL** + **anon key** into `.env.local` and GitHub repo **Variables**:
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`  
    (same values as stockthemes Pages deploy)
+   - Optional: `NEXT_PUBLIC_AUTH_OAUTH_PROVIDERS` (default `google`; set `none` for email-only)
 
 ## Behavior
 
@@ -28,6 +30,10 @@ Stock Context uses the **same Supabase project** as [stockthemes.ai](https://sto
 
 | Route | Purpose |
 |-------|---------|
-| `/sign-in/` | Magic link |
+| `/sign-in/` | Google OAuth + magic link |
 | `/auth/callback/` | OAuth/PKCE callback |
 | `/account/` | Email + sign out |
+
+## PKCE notes
+
+Auth uses `@supabase/supabase-js` with **localStorage** (not `@supabase/ssr` cookies). Static export has no SSR session; cookie-based PKCE often fails after magic-link/OAuth return (Safari ITP). Open the email link in the **same browser** that requested it.

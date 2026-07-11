@@ -23,6 +23,68 @@
   line-height: 1.5;
 }
 
+.oauthStack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.oauthBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--nav-border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--nav-fg);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.oauthBtn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(38, 252, 214, 0.35);
+}
+
+.oauthBtn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.oauthIcon {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.orDivider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0 4px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--nav-muted);
+}
+
+.orDivider::before,
+.orDivider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--nav-border);
+}
+
 .form {
   margin-top: 20px;
   display: flex;

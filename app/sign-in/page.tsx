@@ -1,20 +1,26 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import type { FormEvent } from "react";
 import { useEffect, useState } from "react";
 
+import { SignInOAuthButtons } from "@/components/SignInOAuthButtons";
 import { useSupabaseAuth } from "@/components/SupabaseAuthProvider";
-import { authCallbackAbsoluteUrl, AUTH_DEFAULT_NEXT_PATH, sanitizeAuthNextPath } from "@/lib/authRedirect";
+import {
+  authCallbackAbsoluteUrl,
+  authHardRedirect,
+  AUTH_DEFAULT_NEXT_PATH,
+  sanitizeAuthNextPath,
+} from "@/lib/authRedirect";
+import { getEnabledAuthOAuthProviders } from "@/lib/authOAuthProviders";
 import { href } from "@/lib/links";
 import { getBrowserSupabase } from "@/lib/supabase/browserClient";
 
 import styles from "../auth/auth.module.css";
 
 export default function SignInPage() {
-  const router = useRouter();
   const { configured, loading, user } = useSupabaseAuth();
+  const oauthProviders = getEnabledAuthOAuthProviders();
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -32,9 +38,9 @@ export default function SignInPage() {
   useEffect(() => {
     if (!configured || loading) return;
     if (user) {
-      router.replace(returnPath);
+      authHardRedirect(returnPath);
     }
-  }, [configured, loading, user, router, returnPath]);
+  }, [configured, loading, user, returnPath]);
 
   if (!configured) {
     return (
@@ -98,9 +104,18 @@ export default function SignInPage() {
         <p className={styles.eyebrow}>Sign in</p>
         <h1 className={styles.title}>Stock Context</h1>
         <p className={styles.copy}>
-          Use the same email as <strong>stockthemes.ai</strong>. We&apos;ll send a one-time magic link — no
-          password. Read state syncs across your devices.
+          Use the same account as <strong>stockthemes.ai</strong>. Sign in with Google or a one-time
+          email link — no password. Read state syncs across your devices.
         </p>
+
+        {oauthProviders.length > 0 ? (
+          <>
+            <SignInOAuthButtons returnPath={returnPath} onError={setError} />
+            <div className={styles.orDivider} role="presentation">
+              or email a link
+            </div>
+          </>
+        ) : null}
 
         <form onSubmit={onSubmit} className={styles.form}>
           <label htmlFor="sign-in-email">
