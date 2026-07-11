@@ -5,6 +5,9 @@
   "as_of": "2026-06-01T12:00:00Z",
   "build_id": "example-local-001",
   "ticker_count": 1,
+  "on_portfolio": true,
+  "on_watchlist": false,
+  "coverage": "portfolio",
   "constituents": [
     {
       "symbol": "NVDA",

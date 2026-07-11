@@ -418,6 +418,11 @@ a:hover {
   margin: 0.35rem 0 0;
 }
 
+.ticker-next-earnings {
+  margin: 0.25rem 0 0;
+  font-size: 0.8125rem;
+}
+
 .ticker-header > .theme-chips {
   margin-top: 0.75rem;
 }
@@ -482,6 +487,28 @@ a:hover {
 
 .badge-weight {
   color: var(--text-muted, var(--muted));
+}
+
+.badge-coverage-portfolio {
+  margin-left: 0.35rem;
+  vertical-align: middle;
+  border-color: rgba(38, 252, 214, 0.4);
+  color: var(--accent, #26fcd6);
+  font-size: 0.55em;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.badge-coverage-watchlist {
+  margin-left: 0.35rem;
+  vertical-align: middle;
+  border-color: rgba(154, 160, 166, 0.45);
+  color: var(--text-secondary, #c4c8cc);
+  font-size: 0.55em;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .badge-bull {

@@ -40,6 +40,11 @@ export function TickerHeader({ symbol, meta, manifest }: Props) {
       ? `${(meta.portfolio_weight * 100).toFixed(1)}% portfolio`
       : null;
   const logoUrl = resolveTickerLogoUrl(meta.logo_url);
+  const nextEarnings = String(meta.next_earnings_date || "").trim();
+  const earningsTiming =
+    meta.earnings_timing === "BMO" || meta.earnings_timing === "AMC"
+      ? meta.earnings_timing
+      : null;
 
   return (
     <header className="ticker-header">
@@ -64,6 +69,13 @@ export function TickerHeader({ symbol, meta, manifest }: Props) {
         </div>
         {meta.company_name && meta.company_name !== symbol ? (
           <p className="ticker-subtitle">{meta.company_name}</p>
+        ) : null}
+        {nextEarnings ? (
+          <p className="ticker-next-earnings muted">
+            Next est. report{" "}
+            <time dateTime={nextEarnings}>{nextEarnings}</time>
+            {earningsTiming ? ` · ${earningsTiming}` : null}
+          </p>
         ) : null}
       </div>
       {meta.themes?.length ? (

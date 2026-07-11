@@ -28,6 +28,13 @@
     "next_earnings_date": { "type": ["string", "null"], "description": "YYYY-MM-DD" },
     "last_earnings_date": { "type": ["string", "null"] },
     "earnings_timing": { "type": ["string", "null"], "enum": ["BMO", "AMC", null] },
+    "workflow_tags": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["pre_earnings_ready", "notes_pending"]
+      }
+    },
     "last_updated_at": { "type": "string" },
     "chart_url": {
       "type": "string",

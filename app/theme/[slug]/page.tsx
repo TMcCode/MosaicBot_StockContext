@@ -80,7 +80,18 @@ export default async function ThemePage({ params }: Props) {
       </p>
       <div className="theme-page-header">
         <h1>
-          {meta.name}{" "}
+          {meta.name}
+          {meta.coverage === "portfolio" ? (
+            <>
+              {" "}
+              <span className="badge badge-coverage-portfolio">Portfolio</span>
+            </>
+          ) : meta.coverage === "watchlist" ? (
+            <>
+              {" "}
+              <span className="badge badge-coverage-watchlist">Watchlist</span>
+            </>
+          ) : null}{" "}
           <span className="theme-stockthemes-paren">
             (
             <a

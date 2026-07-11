@@ -49,6 +49,10 @@ export type TickerMeta = {
   portfolio_weight?: number | null;
   primary_theme?: string | null;
   themes?: string[];
+  /** YYYY-MM-DD from upcoming_earnings snapshot (publish-time). */
+  next_earnings_date?: string | null;
+  last_earnings_date?: string | null;
+  earnings_timing?: "BMO" | "AMC" | null;
   tables_index_url: string;
   chart_url?: string;
   financials_url?: string;
@@ -73,6 +77,12 @@ export type ThemeMeta = {
   as_of?: string;
   build_id?: string;
   last_updated_at?: string;
+  /** Portfolio holdings tab theme (wins over watchlist when both). */
+  on_portfolio?: boolean;
+  /** Watchlist coverage tab theme. */
+  on_watchlist?: boolean;
+  /** Primary list label for UI: portfolio | watchlist | null/omitted. */
+  coverage?: "portfolio" | "watchlist" | null;
   content?: ThemeContentSummary;
   constituents: ThemeConstituent[];
 };
