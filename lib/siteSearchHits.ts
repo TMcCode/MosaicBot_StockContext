@@ -14,6 +14,10 @@ export type SiteSearchHit =
 
 export type SiteSearchEngine = { index: SearchIndex; fuse: Fuse<SiteSearchFuseRow> };
 
+/** Fuse score; lower is better. Drop weak fuzzy noise (esp. ticker-like queries). */
+const FUZZY_MAX_SCORE = 0.42;
+const FUZZY_MAX_SCORE_TICKERISH = 0.35;
+
 export function parseSiteSearchIndex(raw: string): SearchIndex {
   const data = JSON.parse(raw) as SearchIndex;
   if (data.schema_version !== 0) {
@@ -62,8 +66,16 @@ export function buildSiteSearchFuseRows(index: SearchIndex): SiteSearchFuseRow[]
   return rows;
 }
 
+/** True for bare ticker-ish queries (e.g. LINC, BRK.B, 2330.TW) — not free text. */
+export function isTickerishQuery(query: string): boolean {
+  const q = query.trim();
+  if (!q || /\s/.test(q)) return false;
+  // Letters/digits/dot/hyphen, 1–12 chars (covers LINC, BRK.B, 2330.TW).
+  return /^[A-Za-z0-9][A-Za-z0-9.\-]{0,11}$/.test(q);
+}
+
 export function collectSiteSearchHits(
-  _index: SearchIndex,
+  index: SearchIndex,
   fuse: Fuse<SiteSearchFuseRow>,
   query: string,
   limit = 12,
@@ -73,15 +85,47 @@ export function collectSiteSearchHits(
     return [];
   }
 
-  const results = fuse.search(q, { limit });
-  const out: SiteSearchHit[] = [];
   const seen = new Set<string>();
+  const out: SiteSearchHit[] = [];
+  const tickerish = isTickerishQuery(q);
+  const upper = q.toUpperCase();
+
+  if (tickerish) {
+    const matches = index.tickers.filter((t) => t.symbol.toUpperCase().startsWith(upper));
+    matches.sort((a, b) => {
+      const au = a.symbol.toUpperCase();
+      const bu = b.symbol.toUpperCase();
+      const ex = au === upper ? 0 : 1;
+      const ey = bu === upper ? 0 : 1;
+      if (ex !== ey) return ex - ey;
+      return au.localeCompare(bu);
+    });
+    for (const t of matches.slice(0, 8)) {
+      const key = `t:${t.symbol}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push({ kind: "ticker", ref: t, key });
+      if (out.length >= limit) return out;
+    }
+  }
+
+  const maxScore = tickerish ? FUZZY_MAX_SCORE_TICKERISH : FUZZY_MAX_SCORE;
+  const results = fuse.search(q, { limit: Math.max(limit * 2, 20) });
 
   for (const r of results) {
+    if (typeof r.score === "number" && r.score > maxScore) {
+      continue;
+    }
     const row = r.item;
     const key = row.kind === "ticker" ? `t:${row.ref.symbol}` : `th:${row.ref.slug}`;
     if (seen.has(key)) {
       continue;
+    }
+    // For ticker-like queries, don't pad with weak theme noise once we have a ticker hit.
+    if (tickerish && row.kind === "theme" && out.some((h) => h.kind === "ticker")) {
+      if (typeof r.score === "number" && r.score > 0.28) {
+        continue;
+      }
     }
     seen.add(key);
     if (row.kind === "ticker") {
@@ -89,6 +133,7 @@ export function collectSiteSearchHits(
     } else {
       out.push({ kind: "theme", ref: row.ref, key });
     }
+    if (out.length >= limit) break;
   }
 
   return out;

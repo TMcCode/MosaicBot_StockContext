@@ -10,8 +10,9 @@ function clientBasePath(): string {
 }
 
 /**
- * Production static export: same-origin `search_index.v0.json` (bundled at build).
- * Dev: CDN first for freshness. CDN cross-origin fetch needs CORS on storage.stockthemes.ai.
+ * Prefer CDN first so newly published tickers (e.g. portfolio adds) appear in search
+ * before the next GitHub Pages rebuild. Same-origin bundle remains a fallback.
+ * Dev also prefers CDN for freshness.
  */
 export function searchIndexFetchUrls(): string[] {
   const override = process.env.NEXT_PUBLIC_STOCKCONTEXT_SEARCH_INDEX_URL?.trim();
@@ -24,8 +25,5 @@ export function searchIndexFetchUrls(): string[] {
     .trim()
     .replace(/\/$/, "");
   const upstream = `${cdn}/${DEFAULT_OBJECT}`;
-  if (process.env.NODE_ENV === "production") {
-    return [sameOrigin, upstream];
-  }
   return [upstream, sameOrigin];
 }
