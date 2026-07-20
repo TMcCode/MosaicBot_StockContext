@@ -52,7 +52,7 @@ The **Portfolio** tab (formerly `WatchlistTickers`) is **holdings**, not the the
 
 Within tier: **higher Weight** → **older report/transcript date** → **higher market cap**.
 
-**Earnings dates:** ETL snapshots on R2 only — `upcoming_earnings_latest.parquet`, `recent_earnings_latest.parquet`, optionally `earnings_with_estimates_and_fundamentals_enriched_latest.parquet` for BMO/AMC. Filter to universe. **No** `Watchlist_Updates`.
+**Earnings dates:** ETL snapshots on R2 — `upcoming_earnings_latest.parquet` / `recent_earnings_latest.parquet` (built from **Portfolio holdings ∪ watchlist-theme tickers**; portfolio rows sort first), optionally `earnings_with_estimates_and_fundamentals_enriched_latest.parquet` for BMO/AMC. Process A also supplements missing upcoming dates from `business_info.report_date`. Filter to universe. **No** `Watchlist_Updates`.
 
 ---
 
