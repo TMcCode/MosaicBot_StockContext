@@ -98,6 +98,8 @@ If **all** tables ≤150 days → refresh only:
 
 If **any** table stale → refresh **all** pre-earnings tables **including** `Ticker_DetailedOverview`.
 
+**Key Reported Metrics calendar catch-up:** even on the fresh subset, also refresh `Ticker_KeyReportedMetrics` when its earnings-event `Date` is older than the most recent **prior** report date (i.e. Process B missed rolling Last Period). Does not rewrite metrics every Process A when they already reflect the prior print. Works for quarterly / half-year / annual without a fixed 90-day window. If the transcript ledger is already complete, still run a narrow `full_analysis` for this catch-up plus rerating thresholds.
+
 **Never:** `Ticker_Notes` (process C).
 
 ### 4.4 Queue
