@@ -117,6 +117,8 @@ export type TableIndexEntry = {
   preview?: string;
   body_url?: string | null;
   format: string;
+  /** When true, client lazy-loads body on accordion open (history sidecar). */
+  lazy?: boolean;
 };
 
 export type TableBody = {

@@ -1097,6 +1097,21 @@ a:hover {
   margin-top: 0.15rem;
 }
 
+.metrics-event-block {
+  margin-bottom: 1.25rem;
+}
+
+.metrics-event-block:last-of-type {
+  margin-bottom: 0.5rem;
+}
+
+.metrics-event-label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem;
+  letter-spacing: 0.01em;
+}
+
 .metrics-combined-table .metrics-combined-group-row th {
   text-align: center;
   font-size: 0.65rem;

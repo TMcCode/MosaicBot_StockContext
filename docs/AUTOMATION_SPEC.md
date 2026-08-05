@@ -98,7 +98,9 @@ If **all** tables ≤150 days → refresh only:
 
 If **any** table stale → refresh **all** pre-earnings tables **including** `Ticker_DetailedOverview`.
 
-**Key Reported Metrics calendar catch-up:** even on the fresh subset, also refresh `Ticker_KeyReportedMetrics` when its earnings-event `Date` is older than the most recent **prior** report date (i.e. Process B missed rolling Last Period). Does not rewrite metrics every Process A when they already reflect the prior print. Works for quarterly / half-year / annual without a fixed 90-day window. If the transcript ledger is already complete, still run a narrow `full_analysis` for this catch-up plus rerating thresholds.
+**Key Reported Metrics calendar catch-up:** even on the fresh subset, also refresh `Ticker_KeyReportedMetrics` when there is no open-event cluster for the upcoming print (`For Earnings Date` ≈ upcoming), or when the newest cluster is older than the prior report (Process B never opened T+1). Does not rewrite metrics every Process A when they already target the upcoming print. Works for quarterly / half-year / annual without a fixed 90-day window. If the transcript ledger is already complete, still run a narrow `full_analysis` for this catch-up plus rerating thresholds.
+
+**Metrics lifecycle (KRM · Thresholds · Results):** see MosaicBot `docs/EARNINGS_METRICS_LIFECYCLE.md`. Process B scores Results for print T **before** writing KRM for T+1 (seed `Last Period` from Actual Reported for overlapping reported metrics). Primary ticker UI shows **upcoming** (KRM + Thresholds) then **last completed** (full triple). Older events live in a lazy-loaded history sidecar — not in the main payload.
 
 **Never:** `Ticker_Notes` (process C).
 
@@ -122,7 +124,9 @@ If **any** table stale → refresh **all** pre-earnings tables **including** `Ti
 
 ### 5.2 Contents
 
-`full_analysis`, `detailed_overview`, **Earnings Results** — **no** `transcript_notes`.
+`full_analysis`, `detailed_overview`, **Earnings Results** then **Key Reported Metrics for T+1** — **no** `transcript_notes`.
+
+Earnings table order: Results for the just-reported print run **before** opening KRM for the next print (seed Last Period from Actuals). See MosaicBot `docs/EARNINGS_METRICS_LIFECYCLE.md`.
 
 ### 5.3 Transcript wait
 

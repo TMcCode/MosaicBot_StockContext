@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { LazyTableSection } from "@/components/LazyTableSection";
 import { PageReadControl } from "@/components/PageReadControl";
 import { TableSection } from "@/components/TableSection";
 import { TickerHeader } from "@/components/TickerHeader";
@@ -56,15 +57,24 @@ export default async function TickerPage({ params }: Props) {
         </section>
       ) : null}
 
-      {tableEntries.map((prepared, i) => (
-        <TableSection
-          key={prepared.entry.slug}
-          entry={prepared.entry}
-          buildId={buildId}
-          body={prepared.body}
-          defaultOpen={i === 0}
-        />
-      ))}
+      {tableEntries.map((prepared, i) =>
+        prepared.entry.lazy || prepared.entry.slug === "key-reported-metrics-history" ? (
+          <LazyTableSection
+            key={prepared.entry.slug}
+            entry={prepared.entry}
+            buildId={buildId}
+            defaultOpen={false}
+          />
+        ) : (
+          <TableSection
+            key={prepared.entry.slug}
+            entry={prepared.entry}
+            buildId={buildId}
+            body={prepared.body}
+            defaultOpen={i === 0}
+          />
+        ),
+      )}
     </>
   );
 }
@@ -84,6 +94,11 @@ async function prepareTickerTableEntries(
 
   const prepared: PreparedTableEntry[] = [];
   for (const entry of rest) {
+    // History sidecar: never preload — LazyTableSection fetches on open.
+    if (entry.lazy || entry.slug === "key-reported-metrics-history") {
+      prepared.push({ entry });
+      continue;
+    }
     if (entry.slug !== "overview") {
       prepared.push({ entry });
       continue;
