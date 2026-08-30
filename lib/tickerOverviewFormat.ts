@@ -35,6 +35,11 @@ export const TICKER_OVERVIEW_COLUMN_ORDER: string[] = [
   "Recent performance & what the market's focused on",
   "Brands and revenue segments",
   ...TICKER_OVERVIEW_BOTTOM_PAIR_IDS,
+  "KeyInputsAndSourcing",
+  "IndustryPublications",
+  "EconomicDataWatch",
+  "FreeAltDataWatch",
+  "PaidAltDataWatch",
 ];
 
 export function isTickerOverviewBottomPairColumn(columnId: string): boolean {

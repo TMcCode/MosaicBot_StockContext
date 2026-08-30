@@ -1,5 +1,12 @@
 /** Parse + display helpers for Theme_Overview JSON columns (mirrors utils/theme_overview_schema.py). */
 
+import {
+  formatPublicationsText,
+  formatWatchlistText,
+  isMonitoringOverviewColumn,
+  isMonitoringWatchlistColumn,
+} from "./monitoringWatchlistFormat";
+
 export type ForumWatchlistEntry = {
   source_type?: string;
   source?: string;
@@ -260,8 +267,12 @@ export function formatSearchKeywordsText(raw: string): string {
 
 const THEME_OVERVIEW_JSON_COLUMNS = new Set([
   "ForumWatchlist",
+  "IndustryPublications",
   "SearchKeywordsNow",
   "GoogleTrendKeywordsNow",
+  "EconomicDataWatch",
+  "FreeAltDataWatch",
+  "PaidAltDataWatch",
   "TopDatasetsToTrack",
 ]);
 
@@ -382,6 +393,7 @@ export function isFullWidthOverviewColumn(columnId: string): boolean {
     columnId === "HiringTrendWatchpoints" ||
     columnId === "SecondOrderTrends" ||
     columnId === "ForumWatchlist" ||
+    isMonitoringOverviewColumn(columnId) ||
     columnId === "SearchKeywordsNow" ||
     isSearchKeywordColumn(columnId) ||
     columnId === "GoogleTrendKeywordsNow" ||
@@ -394,9 +406,13 @@ export const THEME_OVERVIEW_SECTION_LABELS: { id: string; label: string }[] = [
   { id: "thesis", label: "Theme thesis (Bull / Bear Details)" },
   { id: "HiringTrendWatchpoints", label: "Hiring trend watchpoints" },
   { id: "ForumWatchlist", label: "Forum watchlist" },
+  { id: "IndustryPublications", label: "Industry publications" },
   { id: "SecondOrderTrends", label: "Second-order trends" },
   { id: "SearchKeywordsNow", label: "Search keywords" },
   { id: "GoogleTrendKeywordsNow", label: "Google Trends keywords" },
+  { id: "EconomicDataWatch", label: "Economic data watch" },
+  { id: "FreeAltDataWatch", label: "Free alt data watch" },
+  { id: "PaidAltDataWatch", label: "Paid alt data watch" },
   { id: "TopDatasetsToTrack", label: "Top datasets to track" },
 ];
 
@@ -404,6 +420,7 @@ export const THEME_OVERVIEW_SECTION_LABELS: { id: string; label: string }[] = [
 export const THEME_OVERVIEW_COLUMN_ORDER: string[] = [
   "HiringTrendWatchpoints",
   "ForumWatchlist",
+  "IndustryPublications",
   "SecondOrderTrends",
   "SearchKeywordsNow",
   "SearchKeywordsBrandProduct",
@@ -413,6 +430,9 @@ export const THEME_OVERVIEW_COLUMN_ORDER: string[] = [
   "GoogleTrendProductCategoryIntent",
   "GoogleTrendConsumerIntent",
   "GoogleTrendMacroPolicyTerms",
+  "EconomicDataWatch",
+  "FreeAltDataWatch",
+  "PaidAltDataWatch",
 ];
 
 export function sortThemeOverviewColumns<T extends { id: string }>(cols: T[]): T[] {
@@ -430,6 +450,8 @@ export function formatThemeOverviewField(columnId: string, raw: string): string 
   const v = fieldStr(raw);
   if (!v) return "";
   if (columnId === "ForumWatchlist") return formatForumWatchlistText(v);
+  if (columnId === "IndustryPublications") return formatPublicationsText(v);
+  if (isMonitoringWatchlistColumn(columnId)) return formatWatchlistText(v);
   if (columnId === "SearchKeywordsNow") return formatSearchKeywordsText(v);
   if (isSearchKeywordColumn(columnId)) {
     return parseKeywordListValue(v).map((i) => `• ${i}`).join("\n");

@@ -45,6 +45,12 @@ import { KeywordListField, SearchKeywordsField } from "./SearchKeywordsField";
 import { TickerStructuredJsonField } from "./TickerStructuredJsonField";
 import { TopDatasetsField } from "./TopDatasetsField";
 import { CollapsibleTranscriptRowsTable } from "./CollapsibleTranscriptRowsTable";
+import { IndustryPublicationsField } from "./IndustryPublicationsField";
+import { KeyInputsField } from "./KeyInputsField";
+import { MonitoringWatchlistField } from "./MonitoringWatchlistField";
+import {
+  isMonitoringWatchlistColumn,
+} from "@/lib/monitoringWatchlistFormat";
 
 export function TableSectionContent({ body }: { body: TableBody }) {
   const row = body.rows[0];
@@ -78,6 +84,9 @@ function overviewFieldDisplay(
 ): ReactNode {
   const val = formatThemeOverviewField(col.id, raw);
   if (col.id === "ForumWatchlist") return <ForumWatchlistField raw={raw} />;
+  if (col.id === "KeyInputsAndSourcing") return <KeyInputsField raw={raw} />;
+  if (col.id === "IndustryPublications") return <IndustryPublicationsField raw={raw} />;
+  if (isMonitoringWatchlistColumn(col.id)) return <MonitoringWatchlistField raw={raw} />;
   if (col.id === "SearchKeywordsNow") return <SearchKeywordsField raw={raw} />;
   if (isSearchKeywordColumn(col.id) && col.id !== "SearchKeywordsNow") {
     return <KeywordListField raw={raw} />;
