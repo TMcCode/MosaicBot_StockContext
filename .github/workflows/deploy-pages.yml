@@ -4,13 +4,15 @@ name: Deploy Stock Context to GitHub Pages
 on:
   push:
     branches: [main]
-  # Three daily passes (as_of skip gate skips full builds when unchanged):
+  # Four daily passes (as_of skip gate skips full builds when unchanged):
   #   ~2:30 AM ET — after 2 AM feeds-only publish
-  #   ~9:00 AM ET — primary morning, ~3h after 6 AM full publish
-  #   ~10:30 AM ET — safety net if publish finished after primary
+  #   ~7:30 AM ET — primary morning, ~1.5h after 6 AM full publish (UTC 11:30; shifts ±1h with DST)
+  #   ~1:30 PM ET Mon–Fri — after midday Process B + feeds-only publish
+  #   ~11:30 AM ET — safety net for slow overnight publish
   schedule:
     - cron: "30 6 * * *"
-    - cron: "0 13 * * *"
+    - cron: "30 11 * * *"
+    - cron: "30 17 * * 1-5"
     - cron: "30 15 * * *"
   workflow_dispatch:
     inputs:

@@ -20,6 +20,10 @@ type Props = {
   body: TableBody;
 };
 
+function fieldLabel(col: TableBody["columns"][number]) {
+  return <span className="tidbit-field-label">{formatColumnLabel(col.id, col.label)}</span>;
+}
+
 function renderCell(
   body: TableBody,
   col: TableBody["columns"][number],
@@ -32,6 +36,7 @@ function renderCell(
   if (col.id === "CommentSentiment" && raw) {
     return (
       <td key={col.id} className={cellClass}>
+        {fieldLabel(col)}
         <span className={sentimentClass(raw)}>{raw}</span>
       </td>
     );
@@ -39,12 +44,14 @@ function renderCell(
   if (col.id === "PriceReaction" && raw) {
     return (
       <td key={col.id} className={cellClass}>
+        {fieldLabel(col)}
         <span className={raw.includes("+") ? "pos" : raw.includes("-") ? "neg" : ""}>{raw}</span>
       </td>
     );
   }
   return (
     <td key={col.id} className={cellClass}>
+      {fieldLabel(col)}
       {markdownCols.has(col.id) ? <Markdown>{raw}</Markdown> : raw}
     </td>
   );
@@ -73,6 +80,7 @@ export function CollapsibleTranscriptRowsTable({ body }: Props) {
         const date = transcriptRowDate(row);
         const transcript = formatCellValue("TranscriptName", row.TranscriptName ?? "");
         const summaryParts = tidbits ? [date].filter(Boolean) : [date, transcript].filter(Boolean);
+        const rowCols = cols.filter((col) => formatCellValue(col.id, row[col.id] ?? "").trim());
 
         return (
           <details key={`${date}-${transcript}-${i}`} className="tidbits-transcript" open={i === 0}>
@@ -88,22 +96,24 @@ export function CollapsibleTranscriptRowsTable({ body }: Props) {
                 <span className="muted">Transcript</span>
               )}
             </summary>
-            <div className={wrapClass}>
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    {cols.map((col) => (
-                      <th key={col.id} className={tableColumnLayoutClass(col.id, body)}>
-                        {formatColumnLabel(col.id, col.label)}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>{cols.map((col) => renderCell(body, col, row, markdownCols))}</tr>
-                </tbody>
-              </table>
-            </div>
+            {rowCols.length > 0 ? (
+              <div className={wrapClass}>
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      {rowCols.map((col) => (
+                        <th key={col.id} className={tableColumnLayoutClass(col.id, body)}>
+                          {formatColumnLabel(col.id, col.label)}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>{rowCols.map((col) => renderCell(body, col, row, markdownCols))}</tr>
+                  </tbody>
+                </table>
+              </div>
+            ) : null}
           </details>
         );
       })}

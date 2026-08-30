@@ -1080,6 +1080,10 @@ a:hover {
   border-top: 1px solid var(--border, rgba(38, 252, 214, 0.16));
 }
 
+.tidbit-field-label {
+  display: none;
+}
+
 .table-wrap table.data-table tbody tr:last-child td {
   border-bottom: none;
 }
@@ -1582,15 +1586,85 @@ a:hover {
   }
 
   .table-section {
-    padding: 0.85rem 1rem 0.75rem;
+    padding: 0;
   }
 
   .table-accordion-summary {
-    padding: 0.85rem 1rem;
+    padding: 0.75rem 0.5rem;
   }
 
   .table-accordion-body {
-    padding: 0 1rem 1rem;
+    padding: 0 0.5rem 0.85rem;
+  }
+
+  /* Transcript tidbits / earnings summary: full-width stacked prose, no nested boxes */
+  .table-accordion-body:has(.tidbits-transcripts) {
+    overflow-x: visible;
+  }
+
+  .tidbits-transcripts {
+    gap: 0;
+    min-width: 0;
+  }
+
+  .tidbits-transcript {
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    border-bottom: 1px solid var(--border, rgba(38, 252, 214, 0.16));
+  }
+
+  .tidbits-transcript:last-child {
+    border-bottom: none;
+  }
+
+  .tidbits-transcript-summary {
+    padding: 0.7rem 0;
+  }
+
+  .tidbits-transcript .table-wrap {
+    overflow: visible;
+    border-top: none;
+    margin: 0;
+  }
+
+  .table-wrap.table-collapsible-transcript table.data-table,
+  .table-wrap.table-collapsible-transcript table.data-table thead,
+  .table-wrap.table-collapsible-transcript table.data-table tbody,
+  .table-wrap.table-collapsible-transcript table.data-table tr,
+  .table-wrap.table-collapsible-transcript table.data-table th,
+  .table-wrap.table-collapsible-transcript table.data-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .table-wrap.table-collapsible-transcript table.data-table {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .table-wrap.table-collapsible-transcript table.data-table thead {
+    display: none;
+  }
+
+  .table-wrap.table-collapsible-transcript table.data-table th,
+  .table-wrap.table-collapsible-transcript table.data-table td {
+    min-width: 0;
+    max-width: none;
+    width: 100%;
+    padding: 0.45rem 0 0.85rem;
+    border-bottom: none;
+    overflow-wrap: anywhere;
+  }
+
+  .tidbit-field-label {
+    display: block;
+    margin-bottom: 0.35rem;
+    font-size: 0.625rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted, var(--muted));
   }
 
   .table-preview {
@@ -1621,6 +1695,11 @@ a:hover {
   .table-wrap table.data-table td.col-wide {
     min-width: 14rem;
     max-width: 22rem;
+  }
+
+  .table-wrap.table-collapsible-transcript table.data-table {
+    font-size: 0.8125rem;
+    line-height: 1.5;
   }
 
   .metrics-combined-table .metrics-combined-group-row th {
