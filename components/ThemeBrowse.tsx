@@ -1,8 +1,7 @@
 "use client";
 
-import Fuse from "fuse.js";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { themeHref } from "@/lib/links";
 import { themeHasPublishedPage } from "@/lib/themePage";
@@ -14,24 +13,42 @@ type Props = {
 
 export function ThemeBrowse({ themes }: Props) {
   const [query, setQuery] = useState("");
+  const [filterBusy, setFilterBusy] = useState(false);
+  const [filtered, setFiltered] = useState<ThemeIndexEntry[] | null>(null);
 
-  const fuse = useMemo(
-    () =>
-      new Fuse(themes, {
+  const q = query.trim();
+  const withData = themes.filter(themeHasPublishedPage).length;
+
+  useEffect(() => {
+    if (!q) {
+      setFiltered(null);
+      setFilterBusy(false);
+      return;
+    }
+
+    let cancelled = false;
+    setFilterBusy(true);
+
+    void import("fuse.js").then(({ default: FuseCtor }) => {
+      if (cancelled) return;
+      const fuse = new FuseCtor(themes, {
         keys: ["name", "slug"],
         threshold: 0.35,
         ignoreLocation: true,
-      }),
-    [themes],
-  );
+      });
+      setFiltered(fuse.search(q).map((r) => r.item));
+      setFilterBusy(false);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [q, themes]);
 
   const shown = useMemo(() => {
-    const q = query.trim();
     if (!q) return themes;
-    return fuse.search(q).map((r) => r.item);
-  }, [query, themes, fuse]);
-
-  const withData = themes.filter(themeHasPublishedPage).length;
+    return filtered ?? themes;
+  }, [q, themes, filtered]);
 
   return (
     <>
@@ -45,6 +62,7 @@ export function ThemeBrowse({ themes }: Props) {
       />
       <p className="muted browse-count">
         {shown.length} of {themes.length} themes · {withData} with research notes
+        {filterBusy ? " · filtering…" : null}
       </p>
       <ul className="grid grid-2 ticker-browse-list">
         {shown.map((theme) => {
@@ -70,6 +88,9 @@ export function ThemeBrowse({ themes }: Props) {
           );
         })}
       </ul>
+      {q && !filterBusy && filtered && filtered.length === 0 ? (
+        <p className="muted">No matches.</p>
+      ) : null}
     </>
   );
 }

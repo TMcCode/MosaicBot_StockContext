@@ -58,7 +58,7 @@ export function LazyTableSection({ entry, buildId, defaultOpen = false }: Props)
           <span className="section-title">{entry.display_name}</span>
           {body && body.rows.length > 1 ? (
             <span className="table-meta-chip muted">{body.rows.length} rows</span>
-          ) : entry.format === "multi_row" ? (
+          ) : entry.format === "multi_row" || entry.format === "metrics_combined" ? (
             <span className="table-meta-chip muted">Table</span>
           ) : null}
         </div>

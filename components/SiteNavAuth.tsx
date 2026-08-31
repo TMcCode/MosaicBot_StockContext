@@ -2,19 +2,19 @@
 
 import Link from "next/link";
 
-import { useOptionalSupabaseAuth } from "@/components/SupabaseAuthProvider";
+import { useAuthUser } from "@/lib/auth/AuthUserContext";
 import { href } from "@/lib/links";
 
 import styles from "./SiteHeader.module.css";
 
 export function SiteNavAuth() {
-  const { configured, loading, user } = useOptionalSupabaseAuth();
+  const { configured, loading, userId } = useAuthUser();
 
   if (!configured) {
     return null;
   }
 
-  if (user) {
+  if (userId) {
     return (
       <span className={styles.authNav}>
         <Link href={href("/account")}>Account</Link>

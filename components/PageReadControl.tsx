@@ -4,8 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 
-import { useOptionalSupabaseAuth } from "@/components/SupabaseAuthProvider";
 import { useReadState } from "@/components/ReadStateProvider";
+import { useAuthUser } from "@/lib/auth/AuthUserContext";
 import { href } from "@/lib/links";
 import { isUnread, type PageType } from "@/lib/readState/types";
 
@@ -19,7 +19,7 @@ type Props = {
 
 export function PageReadControl({ pageType, pageKey, buildId }: Props) {
   const pathname = usePathname();
-  const { configured, loading: authLoading, user } = useOptionalSupabaseAuth();
+  const { configured, loading: authLoading, userId } = useAuthUser();
   const readState = useReadState();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -71,7 +71,7 @@ export function PageReadControl({ pageType, pageKey, buildId }: Props) {
   if (ready) {
     if (!configured) {
       statusLabel = "Read tracking saves in this browser only.";
-    } else if (!user) {
+    } else if (!userId) {
       statusLabel = "Sign in to sync read state across devices.";
     } else if (showUpdated) {
       statusClass = `${styles.status} ${styles.statusUpdated}`;
@@ -93,7 +93,7 @@ export function PageReadControl({ pageType, pageKey, buildId }: Props) {
     <div className={styles.bar} role="status" aria-live="polite">
       <span className={statusClass}>{statusLabel}</span>
       {error ? <span className="muted">{error}</span> : null}
-      {configured && !user && ready ? (
+      {configured && !userId && ready ? (
         <Link href={signInHref} className={styles.signInLink}>
           Sign in
         </Link>

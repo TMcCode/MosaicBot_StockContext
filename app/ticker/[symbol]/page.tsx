@@ -4,9 +4,11 @@ import { notFound } from "next/navigation";
 import { LazyTableSection } from "@/components/LazyTableSection";
 import { PageReadControl } from "@/components/PageReadControl";
 import { TableSection } from "@/components/TableSection";
+import { TickerChartSection } from "@/components/TickerChartSection";
 import { TickerHeader } from "@/components/TickerHeader";
 import {
   allTickerSymbols,
+  loadChartSelectedDates,
   loadManifest,
   loadTableBody,
   loadTickerMeta,
@@ -14,7 +16,7 @@ import {
 } from "@/lib/data";
 import { href } from "@/lib/links";
 import { mergeOverviewTableBodies } from "@/lib/mergeOverviewTableBodies";
-import type { TableBody, TableIndexEntry } from "@/lib/types";
+import type { Manifest, TableBody, TableIndexEntry, TickerMeta } from "@/lib/types";
 
 export function generateStaticParams() {
   return allTickerSymbols().map((symbol) => ({ symbol }));
@@ -25,10 +27,11 @@ type Props = { params: Promise<{ symbol: string }> };
 export default async function TickerPage({ params }: Props) {
   const { symbol: raw } = await params;
   const symbol = decodeURIComponent(raw).toUpperCase();
-  const [meta, manifest, index] = await Promise.all([
+  const [meta, manifest, index, chartSelectedDates] = await Promise.all([
     loadTickerMeta(symbol),
     loadManifest(),
     loadTickerTablesIndex(symbol),
+    loadChartSelectedDates(),
   ]);
   if (!meta) {
     notFound();
@@ -36,6 +39,7 @@ export default async function TickerPage({ params }: Props) {
 
   const buildId = index?.build_id;
   const tableEntries = await prepareTickerTableEntries(index?.tables ?? [], buildId);
+  const chartThemes = resolveTickerChartThemes(meta, manifest);
 
   return (
     <>
@@ -49,7 +53,12 @@ export default async function TickerPage({ params }: Props) {
       <TickerHeader symbol={symbol} meta={meta} manifest={manifest} />
       <PageReadControl pageType="ticker" pageKey={symbol} buildId={buildId} />
 
-      {/* chart_1y + financials: lazy-load from meta.chart_url / meta.financials_url when UI lands */}
+      <TickerChartSection
+        symbol={symbol}
+        companyName={meta.company_name}
+        themes={chartThemes}
+        selectedDates={chartSelectedDates}
+      />
 
       {tableEntries.length === 0 ? (
         <section className="card">
@@ -116,4 +125,15 @@ async function prepareTickerTableEntries(
     });
   }
   return prepared;
+}
+
+function resolveTickerChartThemes(meta: TickerMeta, manifest: Manifest | null) {
+  const names = meta.themes ?? [];
+  return names
+    .map((name) => {
+      const entry = manifest?.themes.find((t) => t.name === name);
+      if (!entry?.slug) return null;
+      return { slug: entry.slug, name };
+    })
+    .filter((x): x is { slug: string; name: string } => Boolean(x));
 }

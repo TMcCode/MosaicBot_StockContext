@@ -2,6 +2,12 @@ import fs from "fs";
 import path from "path";
 
 import { fetchPublicJsonText, STOCKCONTEXT_BUILD_CACHE_DIR } from "./stockcontextBuildCache";
+import {
+  CHART_SELECTED_DATES_REL,
+  normalizeChartSelectedDates,
+  type ChartSelectedDatesV0,
+} from "./chart/chartSelectedDates";
+import type { ManifestSelectedDateV0 } from "./chart/types";
 import { themeHasPublishedPage } from "./themePage";
 import type {
   HomeFeeds,
@@ -70,6 +76,17 @@ export async function loadHomeFeedSection(
 /** Sync disk read for generateStaticParams and ticker/theme pages (Tier 2 CDN later). */
 export function loadManifestSync(): Manifest | null {
   return readJsonSync<Manifest>("manifest.v0.json");
+}
+
+/** Chart custom period buttons (IranWar, LibDay) — synced at build from stockthemes manifest. */
+export async function loadChartSelectedDates(): Promise<ManifestSelectedDateV0[]> {
+  const data = await readJsonOrFetch<ChartSelectedDatesV0>(CHART_SELECTED_DATES_REL);
+  return normalizeChartSelectedDates(data);
+}
+
+export function loadChartSelectedDatesSync(): ManifestSelectedDateV0[] {
+  const data = readJsonSync<ChartSelectedDatesV0>(CHART_SELECTED_DATES_REL);
+  return normalizeChartSelectedDates(data);
 }
 
 export type ResolvedHomeFeedSection = {

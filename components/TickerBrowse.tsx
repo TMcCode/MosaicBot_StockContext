@@ -5,29 +5,45 @@ import { useEffect, useMemo, useState } from "react";
 
 import { TierBadge } from "@/components/TierBadge";
 import { WorkflowTagBadges } from "@/components/WorkflowTagBadges";
+import { fetchPublicJson } from "@/lib/fetchPublicJson";
 import { tickerHref } from "@/lib/links";
 import { collectSiteSearchHits, loadSiteSearchEngine, type SiteSearchEngine } from "@/lib/siteSearchHits";
 import { formatDateOnly } from "@/lib/tableDisplay";
-import type { SearchTickerRow, WorkflowTagsFeed } from "@/lib/types";
-import { fetchPublicJson } from "@/lib/fetchPublicJson";
+import type { BrowseTickerRow } from "@/lib/tickerBrowse";
+import type { WorkflowTagsFeed } from "@/lib/types";
 
 type Props = {
-  updatedAtBySymbol?: Record<string, string>;
+  tickers: BrowseTickerRow[];
+  manifestAsOf?: string;
 };
 
-export function TickerBrowse({ updatedAtBySymbol = {} }: Props) {
+export function TickerBrowse({ tickers, manifestAsOf }: Props) {
   const [query, setQuery] = useState("");
   const [engine, setEngine] = useState<SiteSearchEngine | null>(null);
   const [workflowTagsBySymbol, setWorkflowTagsBySymbol] = useState<Record<string, string[]>>({});
-  const [loadBusy, setLoadBusy] = useState(true);
+  const [filterBusy, setFilterBusy] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
 
+  const q = query.trim();
+
   useEffect(() => {
+    if (!q) {
+      return;
+    }
+    if (engine) {
+      return;
+    }
+
+    let cancelled = false;
+    setFilterBusy(true);
+    setLoadError(null);
+
     void Promise.all([
       loadSiteSearchEngine(),
       fetchPublicJson<WorkflowTagsFeed>("feeds/workflow_tags.v0.json").catch(() => null),
     ])
       .then(([searchEngine, feed]) => {
+        if (cancelled) return;
         setEngine(searchEngine);
         if (feed) {
           const bySymbol: Record<string, string[]> = {};
@@ -38,25 +54,37 @@ export function TickerBrowse({ updatedAtBySymbol = {} }: Props) {
         }
       })
       .catch((e: unknown) => {
-        setLoadError(e instanceof Error ? e.message : "Failed to load ticker index");
-        setEngine(null);
+        if (cancelled) return;
+        setLoadError(e instanceof Error ? e.message : "Failed to load search index");
       })
-      .finally(() => setLoadBusy(false));
-  }, []);
+      .finally(() => {
+        if (!cancelled) setFilterBusy(false);
+      });
 
-  const tickers = useMemo(() => {
-    if (!engine) return [];
-    return [...engine.index.tickers].sort((a, b) => a.symbol.localeCompare(b.symbol));
-  }, [engine]);
+    return () => {
+      cancelled = true;
+    };
+  }, [q, engine]);
 
   const shown = useMemo(() => {
-    if (!engine) return [];
-    const q = query.trim();
     if (!q) return tickers;
-    return collectSiteSearchHits(engine.index, engine.fuse, q)
+    if (!engine) return tickers;
+    return collectSiteSearchHits(engine.index, engine.fuse, q, 500)
       .filter((h) => h.kind === "ticker")
-      .map((h) => h.ref);
-  }, [query, tickers, engine]);
+      .map((h) => ({
+        symbol: h.ref.symbol.toUpperCase(),
+        company_name: h.ref.company_name ?? h.ref.name,
+        tier: h.ref.tier,
+        workflow_tags: h.ref.workflow_tags,
+        last_updated_at: h.ref.last_updated_at,
+      }));
+  }, [q, tickers, engine]);
+
+  const asOfLabel = manifestAsOf
+    ? new Date(manifestAsOf).toLocaleDateString()
+    : engine?.index.as_of
+      ? new Date(engine.index.as_of).toLocaleDateString()
+      : null;
 
   return (
     <>
@@ -67,39 +95,33 @@ export function TickerBrowse({ updatedAtBySymbol = {} }: Props) {
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Filter tickers…"
         aria-label="Filter tickers"
-        disabled={loadBusy && !engine}
       />
       {loadError ? (
         <p className="muted browse-count" role="status">
-          Could not load ticker list ({loadError}). Try again later or use header search.
-        </p>
-      ) : loadBusy && !engine ? (
-        <p className="muted browse-count" role="status">
-          Loading tickers…
+          Could not load search index ({loadError}). Try again or use header search.
         </p>
       ) : (
         <p className="muted browse-count">
           {shown.length} of {tickers.length} tickers
-          {engine?.index.as_of ? (
-            <span> · data as of {new Date(engine.index.as_of).toLocaleDateString()}</span>
-          ) : null}
+          {asOfLabel ? <span> · data as of {asOfLabel}</span> : null}
+          {filterBusy ? <span> · loading search…</span> : null}
         </p>
       )}
-      {!loadError && tickers.length > 0 ? (
+      {tickers.length > 0 ? (
         <ul className="grid grid-2 ticker-browse-list">
           {shown.map((t) => (
             <TickerBrowseItem
               key={t.symbol}
               ticker={t}
-              lastUpdated={updatedAtBySymbol[t.symbol.toUpperCase()] ?? t.last_updated_at}
+              lastUpdated={t.last_updated_at}
               workflowTags={
-                workflowTagsBySymbol[t.symbol.toUpperCase()] ?? t.workflow_tags
+                workflowTagsBySymbol[t.symbol] ?? t.workflow_tags
               }
             />
           ))}
         </ul>
       ) : null}
-      {!loadBusy && !loadError && query.trim() && shown.length === 0 ? (
+      {!loadError && q && !filterBusy && engine && shown.length === 0 ? (
         <p className="muted">No matches.</p>
       ) : null}
     </>
@@ -111,7 +133,7 @@ function TickerBrowseItem({
   lastUpdated,
   workflowTags,
 }: {
-  ticker: SearchTickerRow;
+  ticker: BrowseTickerRow;
   lastUpdated?: string;
   workflowTags?: string[];
 }) {

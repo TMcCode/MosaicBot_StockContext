@@ -2,12 +2,13 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
 
+import { DynamicAuthRoot } from "@/components/DynamicAuthRoot";
 import { PageSurface } from "@/components/PageSurface";
 import { ReadStateProvider } from "@/components/ReadStateProvider";
 import { SiteHeader } from "@/components/SiteHeader";
-import { SupabaseAuthProvider } from "@/components/SupabaseAuthProvider";
 import { ThemeRoot } from "@/components/ThemeRoot";
 import { themeInitScriptContent } from "@/lib/themeStorage";
+import { STOCKTHEMES_PUBLIC_BASE_URL } from "@/lib/chart/stockthemesPublicBase";
 
 import "./globals.css";
 
@@ -33,20 +34,24 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       className={`${geistSans.variable} ${geistMono.variable}`}
       suppressHydrationWarning
     >
+      <head>
+        <link rel="preconnect" href={STOCKTHEMES_PUBLIC_BASE_URL} crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href={STOCKTHEMES_PUBLIC_BASE_URL} />
+      </head>
       <body>
         <Script
           id="stockcontext-theme-init"
           strategy="beforeInteractive"
           dangerouslySetInnerHTML={{ __html: themeInitScriptContent() }}
         />
-        <SupabaseAuthProvider>
+        <DynamicAuthRoot>
           <ReadStateProvider>
             <ThemeRoot>
               <SiteHeader />
               <PageSurface>{children}</PageSurface>
             </ThemeRoot>
           </ReadStateProvider>
-        </SupabaseAuthProvider>
+        </DynamicAuthRoot>
       </body>
     </html>
   );

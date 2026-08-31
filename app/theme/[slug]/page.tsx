@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { LazyTableSection } from "@/components/LazyTableSection";
 import { PageReadControl } from "@/components/PageReadControl";
 import { TableSection } from "@/components/TableSection";
 import { TierBadge } from "@/components/TierBadge";
@@ -17,6 +18,10 @@ import {
   formatTickerCoverageStats,
 } from "@/lib/themePageStats";
 import { orderThemeTableEntries } from "@/lib/themeTableOrder";
+import type { TableBody, TableIndexEntry } from "@/lib/types";
+
+/** Only section inlined at build; rest lazy-load from CDN on accordion open. */
+const THEME_EAGER_TABLE_SLUG = "bull-bear-details";
 
 export function generateStaticParams() {
   return allThemeSlugs().map((slug) => ({ slug }));
@@ -34,23 +39,15 @@ export default async function ThemePage({ params }: Props) {
     notFound();
   }
 
-  const tableEntries = orderThemeTableEntries(
-    (tablesIndex?.tables ?? []).filter((t) => t.has_data && t.body_url),
-  );
   const buildId = tablesIndex?.build_id;
-  const overviewEntry = tableEntries.find((t) => t.slug === "overview");
-  const bullBearEntry = tableEntries.find((t) => t.slug === "bull-bear-details");
-  let lastUpdated = formatDateOnly(meta.last_updated_at);
-  if (overviewEntry?.body_url) {
-    const overviewBody = await loadTableBody(overviewEntry.body_url, buildId);
-    const row = overviewBody?.rows[0];
-    const fromOverview = formatDateOnly(row?.LastUpdated ?? row?.last_updated);
-    if (fromOverview) lastUpdated = fromOverview;
-  }
+  const { tableEntries, bullBearBody } = await prepareThemeTableEntries(
+    orderThemeTableEntries((tablesIndex?.tables ?? []).filter((t) => t.has_data && t.body_url)),
+    buildId,
+  );
+  const lastUpdated = formatDateOnly(meta.last_updated_at);
   let hasThesisFromTables = meta.content?.has_thesis;
-  if (hasThesisFromTables == null && bullBearEntry?.body_url) {
-    const bullBearBody = await loadTableBody(bullBearEntry.body_url, buildId);
-    const thesis = bullBearBody?.rows[0]?.thesis?.trim();
+  if (hasThesisFromTables == null && bullBearBody) {
+    const thesis = bullBearBody.rows[0]?.thesis?.trim();
     hasThesisFromTables = Boolean(thesis && thesis !== "False");
   }
   const withData = meta.constituents.filter((c) => c.has_table_data !== false);
@@ -141,14 +138,24 @@ export default async function ThemePage({ params }: Props) {
             points. <strong>Overview</strong> is monitoring guidance (hiring, forums,
             second-order trends, search keywords, Google Trends, datasets).
           </p>
-          {tableEntries.map((entry) => (
-            <TableSection
-              key={entry.slug}
-              entry={entry}
-              buildId={buildId}
-              defaultOpen={entry.slug === "bull-bear-details"}
-            />
-          ))}
+          {tableEntries.map((prepared) =>
+            prepared.lazy ? (
+              <LazyTableSection
+                key={prepared.entry.slug}
+                entry={prepared.entry}
+                buildId={buildId}
+                defaultOpen={false}
+              />
+            ) : (
+              <TableSection
+                key={prepared.entry.slug}
+                entry={prepared.entry}
+                buildId={buildId}
+                body={prepared.body}
+                defaultOpen={prepared.entry.slug === THEME_EAGER_TABLE_SLUG}
+              />
+            ),
+          )}
         </>
       )}
 
@@ -185,4 +192,32 @@ export default async function ThemePage({ params }: Props) {
       </section>
     </>
   );
+}
+
+type PreparedThemeTableEntry = {
+  entry: TableIndexEntry;
+  body?: TableBody | null;
+  lazy?: boolean;
+};
+
+async function prepareThemeTableEntries(
+  entries: TableIndexEntry[],
+  buildId?: string,
+): Promise<{ tableEntries: PreparedThemeTableEntry[]; bullBearBody: TableBody | null }> {
+  let bullBearBody: TableBody | null = null;
+  const tableEntries: PreparedThemeTableEntry[] = [];
+
+  for (const entry of entries) {
+    if (entry.slug === THEME_EAGER_TABLE_SLUG) {
+      const body = entry.body_url
+        ? await loadTableBody(entry.body_url, buildId).catch(() => null)
+        : null;
+      bullBearBody = body;
+      tableEntries.push({ entry, body });
+      continue;
+    }
+    tableEntries.push({ entry, lazy: true });
+  }
+
+  return { tableEntries, bullBearBody };
 }

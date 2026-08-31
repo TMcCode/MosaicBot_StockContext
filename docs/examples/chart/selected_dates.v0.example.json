@@ -1,0 +1,9 @@
+{
+  "schema_version": 0,
+  "as_of": "2026-06-01T12:00:00Z",
+  "source": "stockthemes manifest.json selected_dates",
+  "selected_dates": [
+    { "day_name": "IranWar", "date": "2026-02-28" },
+    { "day_name": "LibDay", "date": "2025-04-02" }
+  ]
+}

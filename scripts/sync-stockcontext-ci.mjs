@@ -6,7 +6,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
-import { STOCKCONTEXT_PREFIX, STOCKCONTEXT_PUBLIC_BASE_URL } from "./lib/storageConfig.mjs";
+import { STOCKCONTEXT_PREFIX, STOCKCONTEXT_PUBLIC_BASE_URL, STOCKTHEMES_MANIFEST_URL } from "./lib/storageConfig.mjs";
 import { downloadR2Object, r2ObjectMetadata, r2SyncEnabled } from "./lib/r2Download.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -113,6 +113,52 @@ async function downloadFromCdn(relative, meta) {
   return true;
 }
 
+/** Slim chart config from sister-site manifest (custom period buttons). */
+async function syncChartSelectedDates(meta) {
+  const relative = "chart/selected_dates.v0.json";
+  const dest = path.join(CACHE, relative);
+  const prev = meta.files[relative];
+  const headers = { cache: "no-store" };
+  if (prev?.etag && fs.existsSync(dest)) {
+    const ifNoneMatch = formatEtag(prev.etag);
+    if (ifNoneMatch) headers["If-None-Match"] = ifNoneMatch;
+  }
+
+  try {
+    const res = await fetch(STOCKTHEMES_MANIFEST_URL, { headers });
+    if (res.status === 304) {
+      return false;
+    }
+    if (!res.ok) {
+      console.warn(`sync-stockcontext-ci: chart selected_dates skipped (manifest ${res.status})`);
+      return false;
+    }
+    const manifest = JSON.parse(await res.text());
+    const selectedDates = Array.isArray(manifest.selected_dates) ? manifest.selected_dates : [];
+    const payload = {
+      schema_version: 0,
+      as_of: typeof manifest.as_of === "string" ? manifest.as_of : new Date().toISOString(),
+      source: "stockthemes manifest.json selected_dates",
+      selected_dates: selectedDates,
+    };
+    ensureDir(dest);
+    fs.writeFileSync(dest, `${JSON.stringify(payload, null, 2)}\n`);
+    const etag = (res.headers.get("etag") || "").replace(/^"|"$/g, "");
+    meta.files[relative] = {
+      etag: etag || undefined,
+      at: new Date().toISOString(),
+      source: "stockthemes-manifest",
+    };
+    console.log(
+      `sync-stockcontext-ci: chart selected_dates ok (${selectedDates.length} custom periods)`,
+    );
+    return true;
+  } catch (e) {
+    console.warn(`sync-stockcontext-ci: chart selected_dates sync failed (${e.message || e})`);
+    return false;
+  }
+}
+
 async function downloadRelative(relative, meta) {
   if (cdnSyncEnabled()) {
     return downloadFromCdn(relative, meta);
@@ -150,6 +196,10 @@ function seedFromExamples(meta) {
   copy(manifestSrc, "manifest.v0.json");
   copy(path.join(examples, "search_index.v0.example.json"), "search_index.v0.json");
   copy(path.join(examples, "home_feeds.v0.example.json"), "feeds/home.v0.json");
+  const chartDates = path.join(examples, "chart", "selected_dates.v0.example.json");
+  if (fs.existsSync(chartDates)) {
+    copy(chartDates, "chart/selected_dates.v0.json");
+  }
   const themeIndex = path.join(examples, "themes", "index.v0.example.json");
   if (fs.existsSync(themeIndex)) {
     copy(themeIndex, "themes/index.v0.json");
@@ -361,6 +411,8 @@ async function main() {
 
   saveMeta(meta);
   copySearchIndexToPublic();
+  await syncChartSelectedDates(meta);
+  saveMeta(meta);
   const manifestPath = path.join(CACHE, "manifest.v0.json");
   if (!fs.existsSync(manifestPath)) {
     console.error("::error::No manifest in cache — set R2 secrets, STOCKCONTEXT_SYNC_VIA_CDN=1, or add examples");

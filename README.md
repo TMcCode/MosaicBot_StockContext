@@ -30,7 +30,7 @@ Automation **code** lives in MosaicBot; **specs** live here.
 ```bash
 npm ci
 npm run sync:cache    # R2 sync, or seeds docs/examples into .cache/stockcontext-public
-npm run dev
+npm run dev           # http://localhost:3001 (3000 is usually stockthemes)
 ```
 
 After publishing feeds locally from MosaicBot, prefer disk over CDN:

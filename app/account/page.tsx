@@ -5,21 +5,23 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 import { AccountRecentReads } from "@/components/AccountRecentReads";
-import { useSupabaseAuth } from "@/components/SupabaseAuthProvider";
+import { useOptionalSupabaseAuth } from "@/components/SupabaseAuthProvider";
+import { useAuthUser } from "@/lib/auth/AuthUserContext";
 import { href } from "@/lib/links";
 
 import styles from "../auth/auth.module.css";
 
 export default function AccountPage() {
   const router = useRouter();
-  const { configured, loading, user, signOut } = useSupabaseAuth();
+  const { configured, loading, userId } = useAuthUser();
+  const { user, signOut } = useOptionalSupabaseAuth();
 
   useEffect(() => {
     if (!configured || loading) return;
-    if (!user) {
+    if (!userId) {
       router.replace(href("/sign-in"));
     }
-  }, [configured, loading, user, router]);
+  }, [configured, loading, userId, router]);
 
   if (!configured) {
     return (
@@ -29,7 +31,7 @@ export default function AccountPage() {
     );
   }
 
-  if (loading || !user) {
+  if (loading || !userId || !user) {
     return (
       <section className="card">
         <p className={styles.copy}>Loading…</p>
@@ -50,7 +52,7 @@ export default function AccountPage() {
           <code>build_id</code>, it shows as unread again.
         </p>
 
-        <AccountRecentReads userId={user.id} />
+        <AccountRecentReads userId={userId} />
 
         <p className={styles.footer}>
           <button

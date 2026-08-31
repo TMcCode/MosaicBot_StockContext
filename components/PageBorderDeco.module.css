@@ -4,6 +4,8 @@
   z-index: 0;
   pointer-events: none;
   overflow: hidden;
+  content-visibility: auto;
+  contain: paint;
 }
 
 .img {

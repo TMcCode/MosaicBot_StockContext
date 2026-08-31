@@ -5,7 +5,7 @@ import type { FormEvent } from "react";
 import { useEffect, useState } from "react";
 
 import { SignInOAuthButtons } from "@/components/SignInOAuthButtons";
-import { useSupabaseAuth } from "@/components/SupabaseAuthProvider";
+import { useAuthUser } from "@/lib/auth/AuthUserContext";
 import {
   authCallbackAbsoluteUrl,
   authHardRedirect,
@@ -19,7 +19,7 @@ import { getBrowserSupabase } from "@/lib/supabase/browserClient";
 import styles from "../auth/auth.module.css";
 
 export default function SignInPage() {
-  const { configured, loading, user } = useSupabaseAuth();
+  const { configured, loading, userId } = useAuthUser();
   const oauthProviders = getEnabledAuthOAuthProviders();
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
@@ -37,10 +37,10 @@ export default function SignInPage() {
 
   useEffect(() => {
     if (!configured || loading) return;
-    if (user) {
+    if (userId) {
       authHardRedirect(returnPath);
     }
-  }, [configured, loading, user, returnPath]);
+  }, [configured, loading, userId, returnPath]);
 
   if (!configured) {
     return (
@@ -60,10 +60,10 @@ export default function SignInPage() {
     );
   }
 
-  if (loading || user) {
+  if (loading || userId) {
     return (
       <section className="card">
-        <p className={styles.copy}>{user ? "Redirecting…" : "Loading…"}</p>
+        <p className={styles.copy}>{userId ? "Redirecting…" : "Loading…"}</p>
       </section>
     );
   }

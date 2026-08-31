@@ -10,8 +10,7 @@ import {
   type ReactNode,
 } from "react";
 
-import { useOptionalSupabaseAuth } from "@/components/SupabaseAuthProvider";
-import { fetchPageReads, mergeLocalReadsIntoServer, upsertPageRead, deletePageRead } from "@/lib/readState/api";
+import { useAuthUser } from "@/lib/auth/AuthUserContext";
 import { clearLocalRead, getLocalSeenBuildId, setLocalRead } from "@/lib/readState/localStorage";
 import { isFeedItemUnread, isUnread, normalizePageKey, storageKey, type PageType } from "@/lib/readState/types";
 
@@ -60,22 +59,23 @@ function rowsToMaps(rows: { page_type: PageType; page_key: string; seen_build_id
 }
 
 export function ReadStateProvider({ children }: { children: ReactNode }) {
-  const { configured, user, loading: authLoading } = useOptionalSupabaseAuth();
+  const { configured, userId, loading: authLoading } = useAuthUser();
   const [ready, setReady] = useState(false);
   const [serverSeenMap, setServerSeenMap] = useState<Map<string, string>>(() => new Map());
   const [serverReadAtMap, setServerReadAtMap] = useState<Map<string, string>>(() => new Map());
   const [localVersion, setLocalVersion] = useState(0);
 
   const refresh = useCallback(async () => {
-    if (!configured || !user) {
+    if (!userId) {
       setServerSeenMap(new Map());
       setServerReadAtMap(new Map());
       setReady(!authLoading);
       return;
     }
     try {
-      await mergeLocalReadsIntoServer(user.id);
-      const rows = await fetchPageReads(user.id);
+      const api = await import("@/lib/readState/api");
+      await api.mergeLocalReadsIntoServer(userId);
+      const rows = await api.fetchPageReads(userId);
       const { seenBuildIds, readAt } = rowsToMaps(rows);
       setServerSeenMap(seenBuildIds);
       setServerReadAtMap(readAt);
@@ -86,7 +86,7 @@ export function ReadStateProvider({ children }: { children: ReactNode }) {
     } finally {
       setReady(true);
     }
-  }, [configured, user, authLoading]);
+  }, [userId, authLoading]);
 
   useEffect(() => {
     setReady(false);
@@ -96,31 +96,31 @@ export function ReadStateProvider({ children }: { children: ReactNode }) {
   const getSeenBuildId = useCallback(
     (pageType: PageType, pageKey: string) => {
       const key = storageKey(pageType, pageKey);
-      if (user && configured) {
+      if (userId && configured) {
         return serverSeenMap.get(key);
       }
       void localVersion;
       return getLocalSeenBuildId(pageType, pageKey);
     },
-    [user, configured, serverSeenMap, localVersion],
+    [userId, configured, serverSeenMap, localVersion],
   );
 
   const getReadAt = useCallback(
     (pageType: PageType, pageKey: string) => {
       const key = storageKey(pageType, pageKey);
-      if (user && configured) {
+      if (userId && configured) {
         return serverReadAtMap.get(key);
       }
       return undefined;
     },
-    [user, configured, serverReadAtMap],
+    [userId, configured, serverReadAtMap],
   );
 
   const isPageUnread = useCallback(
     (pageType: PageType, pageKey: string, currentBuildId?: string, options?: { currentEventAt?: string | null }) => {
       const key = storageKey(pageType, pageKey);
       const seenBuildId = getSeenBuildId(pageType, pageKey);
-      const readAt = user && configured ? serverReadAtMap.get(key) : undefined;
+      const readAt = userId && configured ? serverReadAtMap.get(key) : undefined;
       if (options?.currentEventAt) {
         return isFeedItemUnread(seenBuildId, currentBuildId, {
           readAt,
@@ -129,7 +129,7 @@ export function ReadStateProvider({ children }: { children: ReactNode }) {
       }
       return isUnread(seenBuildId, currentBuildId);
     },
-    [getSeenBuildId, user, configured, serverReadAtMap],
+    [getSeenBuildId, userId, configured, serverReadAtMap],
   );
 
   const markRead = useCallback(
@@ -138,7 +138,7 @@ export function ReadStateProvider({ children }: { children: ReactNode }) {
       if (!buildId) {
         return { ok: false, message: "No build id for this page." };
       }
-      if (user && configured) {
+      if (userId && configured) {
         const key = storageKey(pageType, normalized);
         const readAtIso = new Date().toISOString();
         setServerSeenMap((prev) => {
@@ -152,7 +152,8 @@ export function ReadStateProvider({ children }: { children: ReactNode }) {
           return next;
         });
         try {
-          await upsertPageRead(user.id, pageType, normalized, buildId);
+          const api = await import("@/lib/readState/api");
+          await api.upsertPageRead(userId, pageType, normalized, buildId);
           return { ok: true };
         } catch (e: unknown) {
           await refresh();
@@ -166,13 +167,13 @@ export function ReadStateProvider({ children }: { children: ReactNode }) {
       setLocalVersion((v) => v + 1);
       return { ok: true };
     },
-    [user, configured, refresh],
+    [userId, configured, refresh],
   );
 
   const markUnread = useCallback(
     async (pageType: PageType, pageKey: string) => {
       const normalized = normalizePageKey(pageType, pageKey);
-      if (user && configured) {
+      if (userId && configured) {
         const key = storageKey(pageType, normalized);
         setServerSeenMap((prev) => {
           const next = new Map(prev);
@@ -185,7 +186,8 @@ export function ReadStateProvider({ children }: { children: ReactNode }) {
           return next;
         });
         try {
-          await deletePageRead(user.id, pageType, normalized);
+          const api = await import("@/lib/readState/api");
+          await api.deletePageRead(userId, pageType, normalized);
           return { ok: true };
         } catch (e: unknown) {
           await refresh();
@@ -199,7 +201,7 @@ export function ReadStateProvider({ children }: { children: ReactNode }) {
       setLocalVersion((v) => v + 1);
       return { ok: true };
     },
-    [user, configured, refresh],
+    [userId, configured, refresh],
   );
 
   const value = useMemo<ReadStateContextValue>(
