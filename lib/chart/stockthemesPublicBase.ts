@@ -1,3 +1,5 @@
+import { publicAssetPath } from "@/lib/links";
+
 export const STOCKTHEMES_PUBLIC_BASE_URL = "https://storage.stockthemes.ai";
 
 /** Root CDN for stockthemes public JSON (chart sidecars, SPY). */
@@ -7,12 +9,13 @@ export function stockthemesPublicDataBase(): string {
 }
 
 /**
- * Browser chart fetches — dev uses same-origin `/stockthemes-data` rewrite (CDN CORS
- * whitelists localhost:3000 only; stockcontext runs on :3001).
+ * Browser chart fetches:
+ * - dev: same-origin `/stockthemes-data` rewrite (CDN CORS only whitelists :3000)
+ * - prod: same-origin `/chart-data` baked at build (static export; no CDN CORS)
  */
 export function stockthemesBrowserChartFetchBase(): string {
   if (process.env.NODE_ENV === "development") {
     return "/stockthemes-data";
   }
-  return stockthemesPublicDataBase();
+  return publicAssetPath("/chart-data").replace(/\/$/, "");
 }

@@ -3,6 +3,7 @@ node_modules/
 out/
 .cache/
 public/search_index.v0.json
+public/chart-data/
 .env
 .env.local
 *.log

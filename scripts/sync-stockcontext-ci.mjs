@@ -6,12 +6,18 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
-import { STOCKCONTEXT_PREFIX, STOCKCONTEXT_PUBLIC_BASE_URL, STOCKTHEMES_MANIFEST_URL } from "./lib/storageConfig.mjs";
+import {
+  STOCKCONTEXT_PREFIX,
+  STOCKCONTEXT_PUBLIC_BASE_URL,
+  STOCKTHEMES_MANIFEST_URL,
+  STOCKTHEMES_PUBLIC_BASE_URL,
+} from "./lib/storageConfig.mjs";
 import { downloadR2Object, r2ObjectMetadata, r2SyncEnabled } from "./lib/r2Download.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, "..");
 const CACHE = path.join(root, ".cache", "stockcontext-public");
+const CHART_DATA_DIR = path.join(root, "public", "chart-data");
 const META_FILE = path.join(CACHE, "_sync_meta.json");
 
 function scPath(relative) {
@@ -111,6 +117,87 @@ async function downloadFromCdn(relative, meta) {
     source: "cdn",
   };
   return true;
+}
+
+/** Chart performance sidecars from stockthemes public CDN → public/chart-data (static export). */
+async function downloadStockthemesChartFile(relative, meta, { optional = false } = {}) {
+  const rel = relative.replace(/^\//, "");
+  const metaKey = `chart-data/${rel}`;
+  const url = `${STOCKTHEMES_PUBLIC_BASE_URL}/${rel}`;
+  const dest = path.join(CHART_DATA_DIR, rel);
+  const prev = meta.files[metaKey];
+  const headers = { cache: "no-store" };
+  if (prev?.etag && fs.existsSync(dest)) {
+    const ifNoneMatch = formatEtag(prev.etag);
+    if (ifNoneMatch) headers["If-None-Match"] = ifNoneMatch;
+  }
+
+  try {
+    const res = await fetch(url, { headers });
+    if (res.status === 404) {
+      return optional ? false : false;
+    }
+    if (res.status === 304) {
+      return false;
+    }
+    if (!res.ok) {
+      if (optional) return false;
+      throw new Error(`CDN ${res.status} ${url}`);
+    }
+    const text = await res.text();
+    ensureDir(dest);
+    fs.writeFileSync(dest, text);
+    meta.files[metaKey] = {
+      etag: (res.headers.get("etag") || "").replace(/^"|"$/g, "") || undefined,
+      at: new Date().toISOString(),
+      source: "stockthemes-cdn",
+    };
+    return true;
+  } catch (e) {
+    if (optional) return false;
+    throw e;
+  }
+}
+
+async function syncChartPerformanceSidecars(manifest, meta) {
+  const tickers = manifest.tickers || [];
+  const themes = manifest.themes || [];
+  const jobs = [];
+
+  jobs.push({ rel: "spy_snapshot.v0.json", optional: false });
+
+  for (const entry of tickers) {
+    const sym = String(entry?.symbol || entry || "")
+      .trim()
+      .toUpperCase();
+    if (!sym) continue;
+    jobs.push({
+      rel: `tickers/${encodeURIComponent(sym)}.chart.v0.json`,
+      optional: true,
+    });
+  }
+
+  for (const entry of themes) {
+    const slug = String(entry?.slug || entry || "").trim();
+    if (!slug) continue;
+    jobs.push({
+      rel: `themes/${encodeURIComponent(slug)}.chart.v0.json`,
+      optional: true,
+    });
+  }
+
+  let downloaded = 0;
+  let skipped = 0;
+  await runConcurrent(jobs, async (job) => {
+    const ok = await downloadStockthemesChartFile(job.rel, meta, { optional: job.optional });
+    if (ok) downloaded += 1;
+    else skipped += 1;
+  });
+
+  console.log(
+    `sync-stockcontext-ci: chart sidecars ok (${downloaded} updated, ${skipped} unchanged/missing, ${jobs.length} checked)`,
+  );
+  return downloaded;
 }
 
 /** Slim chart config from sister-site manifest (custom period buttons). */
@@ -419,6 +506,9 @@ async function main() {
     process.exit(1);
   }
   const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+  fs.mkdirSync(CHART_DATA_DIR, { recursive: true });
+  await syncChartPerformanceSidecars(manifest, meta);
+  saveMeta(meta);
   if (manifest.build_id === "example-local-001") {
     if (process.env.CI === "true" || remoteSync) {
       console.error(
