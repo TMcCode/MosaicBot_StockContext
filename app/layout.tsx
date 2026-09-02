@@ -5,6 +5,7 @@ import Script from "next/script";
 import { DynamicAuthRoot } from "@/components/DynamicAuthRoot";
 import { PageSurface } from "@/components/PageSurface";
 import { ReadStateProvider } from "@/components/ReadStateProvider";
+import { ScrollToTop } from "@/components/ScrollToTop";
 import { SiteHeader } from "@/components/SiteHeader";
 import { ThemeRoot } from "@/components/ThemeRoot";
 import { themeInitScriptContent } from "@/lib/themeStorage";
@@ -49,6 +50,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <ThemeRoot>
               <SiteHeader />
               <PageSurface>{children}</PageSurface>
+              <ScrollToTop />
             </ThemeRoot>
           </ReadStateProvider>
         </DynamicAuthRoot>

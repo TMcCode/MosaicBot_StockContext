@@ -1,0 +1,57 @@
+.btn {
+  position: fixed;
+  right: max(1rem, env(safe-area-inset-right, 0px));
+  bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+  z-index: 40;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--nav-border, rgba(255, 255, 255, 0.12));
+  border-radius: 12px;
+  background: var(--nav-panel-bg, rgba(12, 14, 16, 0.98));
+  color: var(--nav-muted, #a6b4b2);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate3d(0, 8px, 0);
+  contain: layout style;
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease,
+    color 0.12s ease,
+    border-color 0.12s ease;
+}
+
+.btn.visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translate3d(0, 0, 0);
+}
+
+.btn:hover {
+  color: var(--nav-accent, #26fcd6);
+  border-color: color-mix(in srgb, var(--nav-accent, #26fcd6) 40%, transparent);
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--nav-accent, #26fcd6);
+  outline-offset: 2px;
+}
+
+.btn:active {
+  transform: translate3d(0, 1px, 0) scale(0.96);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn,
+  .btn.visible,
+  .btn:active {
+    transition: none;
+    transform: none;
+  }
+}
