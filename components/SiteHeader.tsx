@@ -3,7 +3,7 @@ import Link from "next/link";
 import { LazySiteSearch } from "@/components/LazySiteSearch";
 import { SiteNavAuth } from "@/components/SiteNavAuth";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { href } from "@/lib/links";
+import { href, publicAssetPath } from "@/lib/links";
 
 import styles from "./SiteHeader.module.css";
 
@@ -12,7 +12,17 @@ export function SiteHeader() {
     <header className={styles.wrap}>
       <nav className={styles.row} aria-label="Primary">
         <Link href={href("/")} className={styles.brand}>
-          Stock Context
+          {/* eslint-disable-next-line @next/next/no-img-element -- small static brand mark */}
+          <img
+            className={styles.brandMark}
+            src={publicAssetPath("/brand/logo-icon-custom.png")}
+            alt=""
+            width={22}
+            height={22}
+            decoding="async"
+            aria-hidden
+          />
+          <span className={styles.brandLabel}>Stock Context</span>
         </Link>
         <LazySiteSearch />
         <div className={styles.links}>

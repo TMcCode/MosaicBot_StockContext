@@ -19,12 +19,35 @@
 .brand {
   display: inline-flex;
   align-items: center;
+  gap: 6px;
   height: 36px;
   font-size: 15px;
   font-weight: 700;
   letter-spacing: 0.01em;
+  line-height: 1;
   color: var(--nav-fg);
   text-decoration: none;
+}
+
+.brandLabel {
+  display: inline-flex;
+  align-items: center;
+  height: 100%;
+  line-height: 1;
+}
+
+/* Override img intrinsic min-width so the mark stays compact in the flex row. */
+.brandMark {
+  display: block;
+  flex-shrink: 0;
+  align-self: center;
+  min-width: 0;
+  width: 22px;
+  height: 22px;
+  max-width: 22px;
+  max-height: 22px;
+  object-fit: contain;
+  object-position: center;
 }
 
 .brand:hover {

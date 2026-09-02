@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { LazyTableSection } from "@/components/LazyTableSection";
 import { PageReadControl } from "@/components/PageReadControl";
 import { TableSection } from "@/components/TableSection";
 import { TierBadge } from "@/components/TierBadge";
@@ -20,8 +19,8 @@ import {
 import { orderThemeTableEntries } from "@/lib/themeTableOrder";
 import type { TableBody, TableIndexEntry } from "@/lib/types";
 
-/** Only section inlined at build; rest lazy-load from CDN on accordion open. */
-const THEME_EAGER_TABLE_SLUG = "bull-bear-details";
+/** Open Bull / Bear by default when present. */
+const THEME_DEFAULT_OPEN_SLUG = "bull-bear-details";
 
 export function generateStaticParams() {
   return allThemeSlugs().map((slug) => ({ slug }));
@@ -138,24 +137,15 @@ export default async function ThemePage({ params }: Props) {
             points. <strong>Overview</strong> is monitoring guidance (hiring, forums,
             second-order trends, search keywords, Google Trends, datasets).
           </p>
-          {tableEntries.map((prepared) =>
-            prepared.lazy ? (
-              <LazyTableSection
-                key={prepared.entry.slug}
-                entry={prepared.entry}
-                buildId={buildId}
-                defaultOpen={false}
-              />
-            ) : (
-              <TableSection
-                key={prepared.entry.slug}
-                entry={prepared.entry}
-                buildId={buildId}
-                body={prepared.body}
-                defaultOpen={prepared.entry.slug === THEME_EAGER_TABLE_SLUG}
-              />
-            ),
-          )}
+          {tableEntries.map((prepared) => (
+            <TableSection
+              key={prepared.entry.slug}
+              entry={prepared.entry}
+              buildId={buildId}
+              body={prepared.body}
+              defaultOpen={prepared.entry.slug === THEME_DEFAULT_OPEN_SLUG}
+            />
+          ))}
         </>
       )}
 
@@ -197,9 +187,13 @@ export default async function ThemePage({ params }: Props) {
 type PreparedThemeTableEntry = {
   entry: TableIndexEntry;
   body?: TableBody | null;
-  lazy?: boolean;
 };
 
+/**
+ * Prefetch all theme table bodies at build/request time.
+ * Browser CDN fetches need CORS on storage.stockthemes.ai (currently missing for
+ * stockcontext.info); server-side load avoids that entirely.
+ */
 async function prepareThemeTableEntries(
   entries: TableIndexEntry[],
   buildId?: string,
@@ -208,15 +202,13 @@ async function prepareThemeTableEntries(
   const tableEntries: PreparedThemeTableEntry[] = [];
 
   for (const entry of entries) {
-    if (entry.slug === THEME_EAGER_TABLE_SLUG) {
-      const body = entry.body_url
-        ? await loadTableBody(entry.body_url, buildId).catch(() => null)
-        : null;
+    const body = entry.body_url
+      ? await loadTableBody(entry.body_url, buildId).catch(() => null)
+      : null;
+    if (entry.slug === THEME_DEFAULT_OPEN_SLUG) {
       bullBearBody = body;
-      tableEntries.push({ entry, body });
-      continue;
     }
-    tableEntries.push({ entry, lazy: true });
+    tableEntries.push({ entry, body });
   }
 
   return { tableEntries, bullBearBody };

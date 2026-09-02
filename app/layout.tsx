@@ -26,6 +26,10 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Stock Context",
   description: "Portfolio and watchlist earnings context",
+  icons: {
+    icon: [{ url: "/icon.png", type: "image/png" }],
+    shortcut: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
