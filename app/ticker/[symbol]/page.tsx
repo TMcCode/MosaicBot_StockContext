@@ -6,6 +6,7 @@ import { PageReadControl } from "@/components/PageReadControl";
 import { TableSection } from "@/components/TableSection";
 import { TickerChartSection } from "@/components/TickerChartSection";
 import { TickerHeader } from "@/components/TickerHeader";
+import { TickerThemeContextPanel } from "@/components/TickerThemeContextPanel";
 import {
   allTickerSymbols,
   loadChartSelectedDates,
@@ -59,6 +60,8 @@ export default async function TickerPage({ params }: Props) {
         themes={chartThemes}
         selectedDates={chartSelectedDates}
       />
+
+      <TickerThemeContextPanel symbol={symbol} manifest={manifest} />
 
       {tableEntries.length === 0 ? (
         <section className="card">

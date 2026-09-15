@@ -175,6 +175,10 @@ async function syncChartPerformanceSidecars(manifest, meta) {
       rel: `tickers/${encodeURIComponent(sym)}.chart.v0.json`,
       optional: true,
     });
+    jobs.push({
+      rel: `tickers/${encodeURIComponent(sym)}.theme_context.v0.json`,
+      optional: true,
+    });
   }
 
   for (const entry of themes) {
