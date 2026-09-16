@@ -184,10 +184,17 @@ async function syncChartPerformanceSidecars(manifest, meta) {
   for (const entry of themes) {
     const slug = String(entry?.slug || entry || "").trim();
     if (!slug) continue;
+    const enc = encodeURIComponent(slug);
     jobs.push({
-      rel: `themes/${encodeURIComponent(slug)}.chart.v0.json`,
+      rel: `themes/${enc}.chart.v0.json`,
       optional: true,
     });
+    // Only themes with published stockcontext pages need quant/composition sidecars.
+    if (entry?.meta_url && entry?.has_table_data !== false) {
+      jobs.push({ rel: `themes/${enc}.factor_profile.v0.json`, optional: true });
+      jobs.push({ rel: `themes/${enc}.factor_attribution.v0.json`, optional: true });
+      jobs.push({ rel: `themes/${enc}.stock_correlations.v0.json`, optional: true });
+    }
   }
 
   let downloaded = 0;
@@ -200,6 +207,69 @@ async function syncChartPerformanceSidecars(manifest, meta) {
 
   console.log(
     `sync-stockcontext-ci: chart sidecars ok (${downloaded} updated, ${skipped} unchanged/missing, ${jobs.length} checked)`,
+  );
+  return downloaded;
+}
+
+/** Extract slim composition payloads from stockthemes theme detail JSON. */
+async function syncThemeCompositionSidecars(manifest, meta) {
+  const themes = (manifest.themes || []).filter(
+    (entry) => entry?.meta_url && entry?.has_table_data !== false && entry?.slug,
+  );
+  let downloaded = 0;
+  let skipped = 0;
+
+  await runConcurrent(themes, async (entry) => {
+    const slug = String(entry.slug).trim();
+    const enc = encodeURIComponent(slug);
+    const sourceRel = `themes/${enc}.json`;
+    const destRel = `themes/${enc}.composition.v0.json`;
+    const metaKey = `chart-data/${destRel}`;
+    const url = `${STOCKTHEMES_PUBLIC_BASE_URL}/${sourceRel}`;
+    const dest = path.join(CHART_DATA_DIR, destRel);
+    const prev = meta.files[metaKey];
+    const headers = { cache: "no-store" };
+    if (prev?.etag && fs.existsSync(dest)) {
+      const ifNoneMatch = formatEtag(prev.etag);
+      if (ifNoneMatch) headers["If-None-Match"] = ifNoneMatch;
+    }
+    try {
+      const res = await fetch(url, { headers });
+      if (res.status === 404 || res.status === 304) {
+        skipped += 1;
+        return;
+      }
+      if (!res.ok) {
+        skipped += 1;
+        return;
+      }
+      const detail = JSON.parse(await res.text());
+      const composition = detail?.chart_1y?.composition_indexed;
+      if (!composition?.series?.length) {
+        skipped += 1;
+        return;
+      }
+      const payload = {
+        schema_version: "theme.composition.v0",
+        slug,
+        name: typeof detail.name === "string" ? detail.name : slug,
+        composition_indexed: composition,
+      };
+      ensureDir(dest);
+      fs.writeFileSync(dest, `${JSON.stringify(payload)}\n`);
+      meta.files[metaKey] = {
+        etag: (res.headers.get("etag") || "").replace(/^"|"$/g, "") || undefined,
+        at: new Date().toISOString(),
+        source: "stockthemes-theme-json",
+      };
+      downloaded += 1;
+    } catch {
+      skipped += 1;
+    }
+  });
+
+  console.log(
+    `sync-stockcontext-ci: composition sidecars ok (${downloaded} updated, ${skipped} unchanged/missing, ${themes.length} themes)`,
   );
   return downloaded;
 }
@@ -512,6 +582,7 @@ async function main() {
   const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
   fs.mkdirSync(CHART_DATA_DIR, { recursive: true });
   await syncChartPerformanceSidecars(manifest, meta);
+  await syncThemeCompositionSidecars(manifest, meta);
   saveMeta(meta);
   if (manifest.build_id === "example-local-001") {
     if (process.env.CI === "true" || remoteSync) {

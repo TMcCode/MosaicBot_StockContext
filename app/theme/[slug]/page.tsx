@@ -3,9 +3,13 @@ import { notFound } from "next/navigation";
 
 import { PageReadControl } from "@/components/PageReadControl";
 import { TableSection } from "@/components/TableSection";
+import { ThemeChartSection } from "@/components/ThemeChartSection";
+import { ThemeCorrMatrixPanel } from "@/components/ThemeCorrMatrixPanel";
+import { ThemeQuantPanel } from "@/components/ThemeQuantPanel";
 import { TierBadge } from "@/components/TierBadge";
 import {
   allThemeSlugs,
+  loadChartSelectedDates,
   loadTableBody,
   loadThemeMeta,
   loadThemeTablesIndex,
@@ -30,9 +34,10 @@ type Props = { params: Promise<{ slug: string }> };
 
 export default async function ThemePage({ params }: Props) {
   const { slug } = await params;
-  const [meta, tablesIndex] = await Promise.all([
+  const [meta, tablesIndex, chartSelectedDates] = await Promise.all([
     loadThemeMeta(slug),
     loadThemeTablesIndex(slug),
+    loadChartSelectedDates(),
   ]);
   if (!meta) {
     notFound();
@@ -95,7 +100,7 @@ export default async function ThemePage({ params }: Props) {
               target="_blank"
               rel="noopener noreferrer"
             >
-              view performance
+              open on stockthemes
             </a>
             )
           </span>
@@ -116,6 +121,18 @@ export default async function ThemePage({ params }: Props) {
           <span className="theme-page-stats-label">Tickers</span> {tickerCoverageLine}
         </span>
       </p>
+
+      <ThemeChartSection
+        slug={slug}
+        themeName={meta.name}
+        constituents={meta.constituents}
+        selectedDates={chartSelectedDates}
+      />
+      <ThemeQuantPanel
+        slug={slug}
+        themeName={meta.name}
+        constituents={meta.constituents}
+      />
 
       <PageReadControl pageType="theme" pageKey={slug} buildId={buildId} />
 
@@ -180,6 +197,8 @@ export default async function ThemePage({ params }: Props) {
           })}
         </ul>
       </section>
+
+      <ThemeCorrMatrixPanel slug={slug} themeName={meta.name} />
     </>
   );
 }
