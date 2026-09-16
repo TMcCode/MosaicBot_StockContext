@@ -166,6 +166,8 @@ export default async function ThemePage({ params }: Props) {
         </>
       )}
 
+      <ThemeCorrMatrixPanel slug={slug} themeName={meta.name} />
+
       <section className="card">
         <h2>Constituents</h2>
         <ul className="grid constituent-list">
@@ -197,8 +199,6 @@ export default async function ThemePage({ params }: Props) {
           })}
         </ul>
       </section>
-
-      <ThemeCorrMatrixPanel slug={slug} themeName={meta.name} />
     </>
   );
 }
