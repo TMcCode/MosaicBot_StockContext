@@ -51,7 +51,7 @@ import styles from "./TickerChartPanel.module.css";
 const BENCHMARK_ID = "__benchmark__";
 const BENCHMARK_NAME = "S&P 500";
 const INTEGER_PRICE_FORMAT = { type: "price" as const, precision: 0, minMove: 1 };
-const MAX_COMPOSITION_SERIES = 12;
+const MAX_COMPOSITION_SERIES = 20;
 
 type ChartMode = "performance" | "composition";
 

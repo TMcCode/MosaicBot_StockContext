@@ -45,7 +45,8 @@ async function fetchJson(
   const base = stockthemesBrowserChartFetchBase();
   const url = `${base}/${path.replace(/^\//, "")}`;
   try {
-    const res = await fetch(url, { credentials: "omit", cache: "default", signal });
+    // Avoid stale top-12 matrices after CDN/bake bumps (Pages JSON can be cached ~10m).
+  const res = await fetch(url, { credentials: "omit", cache: "no-store", signal });
     if (!res.ok) return null;
     return await res.json();
   } catch (e) {

@@ -192,8 +192,9 @@
 }
 
 .matrixScroll {
-  max-height: 22rem;
-  overflow: auto;
+  /* Let the full top-20 grid use page height; only scroll horizontally if needed. */
+  overflow-x: auto;
+  overflow-y: visible;
   overscroll-behavior: contain;
   border: 1px solid var(--border, rgba(38, 252, 214, 0.12));
   border-radius: 8px;
@@ -202,16 +203,22 @@
 
 .corrLayout {
   display: grid;
-  grid-template-columns: minmax(0, 1.45fr) minmax(12rem, 0.85fr);
-  gap: 0.85rem 1rem;
+  grid-template-columns: minmax(0, 1.55fr) minmax(14rem, 0.8fr);
+  gap: 0.75rem 0.9rem;
   align-items: start;
 }
 
 .corrSide {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.55rem;
   min-width: 0;
+}
+
+.pairGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
 }
 
 .pairList {
@@ -239,6 +246,10 @@
 
 @media (max-width: 900px) {
   .corrLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .pairGrid {
     grid-template-columns: 1fr;
   }
 }

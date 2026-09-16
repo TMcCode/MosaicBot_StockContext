@@ -144,8 +144,10 @@ export function ThemeCorrMatrixPanel({ slug, themeName }: Props) {
           <h2 className={styles.title}>Constituent correlations ({payload.window})</h2>
         </div>
         <p className={styles.hint} style={{ marginTop: 0, marginBottom: "0.55rem" }}>
-          Top {payload.tickers.length} holdings by theme weight. Pairwise daily-return
-          correlations · teal = positive, red = negative.
+          Top {tickers.length}
+          {payload.max_tickers > tickers.length ? ` of ${payload.max_tickers}` : ""} holdings
+          by theme weight. Pairwise daily-return correlations · teal = positive, red =
+          negative.
         </p>
 
         <div className={styles.corrLayout}>
@@ -185,37 +187,39 @@ export function ThemeCorrMatrixPanel({ slug, themeName }: Props) {
           </div>
 
           <aside className={styles.corrSide} aria-label="Correlation highlights">
-            <div>
-              <h3 className={styles.colTitle}>Highest pairs</h3>
-              <ul className={styles.pairList}>
-                {topPairs.map((pair) => (
-                  <li key={`hi-${pair.a}-${pair.b}`}>
-                    <span>
-                      {pair.a} · {pair.b}
-                    </span>
-                    <span className={styles.num}>{formatCorr(pair.value)}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            <div className={styles.pairGrid}>
+              <div>
+                <h3 className={styles.colTitle}>Highest pairs</h3>
+                <ul className={styles.pairList}>
+                  {topPairs.map((pair) => (
+                    <li key={`hi-${pair.a}-${pair.b}`}>
+                      <span>
+                        {pair.a} · {pair.b}
+                      </span>
+                      <span className={styles.num}>{formatCorr(pair.value)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
 
-            <div>
-              <h3 className={styles.colTitle}>Lowest pairs</h3>
-              <ul className={styles.pairList}>
-                {bottomPairs.map((pair) => (
-                  <li key={`lo-${pair.a}-${pair.b}`}>
-                    <span>
-                      {pair.a} · {pair.b}
-                    </span>
-                    <span className={styles.num}>{formatCorr(pair.value)}</span>
-                  </li>
-                ))}
-              </ul>
+              <div>
+                <h3 className={styles.colTitle}>Lowest pairs</h3>
+                <ul className={styles.pairList}>
+                  {bottomPairs.map((pair) => (
+                    <li key={`lo-${pair.a}-${pair.b}`}>
+                      <span>
+                        {pair.a} · {pair.b}
+                      </span>
+                      <span className={styles.num}>{formatCorr(pair.value)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
 
             <div>
               <h3 className={styles.colTitle}>Avg corr to peers</h3>
-              <div className={styles.scroll} style={{ maxHeight: "9.5rem" }}>
+              <div className={styles.scroll} style={{ maxHeight: "14rem" }}>
                 <table className={styles.table}>
                   <thead>
                     <tr>
