@@ -29,7 +29,8 @@ permissions:
 
 concurrency:
   group: stockcontext-pages
-  cancel-in-progress: false
+  # Push: cancel superseded UI deploys. Schedule/dispatch: let the in-flight data bake finish.
+  cancel-in-progress: ${{ github.event_name == 'push' }}
 
 jobs:
   check:
@@ -38,11 +39,15 @@ jobs:
       should_build: ${{ steps.check.outputs.should_build }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/cache@v4
+      - uses: actions/cache/restore@v4
         with:
-          path: .cache/stockcontext-public
-          key: stockcontext-public-v5
-          restore-keys: stockcontext-public-v5
+          path: |
+            .cache/stockcontext-public
+            public/chart-data
+          key: stockcontext-public-v6-${{ github.run_id }}
+          restore-keys: |
+            stockcontext-public-v6-
+            stockcontext-public-v5
       - name: Decide if build is needed
         id: check
         env:
@@ -60,16 +65,25 @@ jobs:
         with:
           node-version: "20"
           cache: npm
-      - uses: actions/cache@v4
+      # Always restore+save (not cache@v4 alone): primary-key hits never re-save, which froze
+      # etag meta and forced full re-downloads every run.
+      - uses: actions/cache/restore@v4
         with:
-          path: .cache/stockcontext-public
-          key: stockcontext-public-v5
-          restore-keys: stockcontext-public-v5
+          path: |
+            .cache/stockcontext-public
+            public/chart-data
+          key: stockcontext-public-v6-${{ github.run_id }}
+          restore-keys: |
+            stockcontext-public-v6-
+            stockcontext-public-v5
       - run: npm ci
       - name: Sync public JSON from R2
         env:
           STOCKTHEMES_SYNC_VIA_R2: "1"
-          STOCKCONTEXT_SYNC_CONCURRENCY: "48"
+          STOCKCONTEXT_SYNC_CONCURRENCY: "24"
+          # Push = code-only fast path (reuse Actions cache). Schedule/dispatch = full R2 sync.
+          STOCKCONTEXT_SKIP_REMOTE_SYNC: ${{ github.event_name == 'push' && '1' || '0' }}
+          STOCKCONTEXT_SKIP_CHART_SYNC: ${{ github.event_name == 'push' && '1' || '0' }}
           R2_ENDPOINT_URL: ${{ secrets.R2_ENDPOINT_URL }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
@@ -77,6 +91,9 @@ jobs:
       - name: Build static export
         env:
           CI: "true"
+          # Sync step already populated cache/chart-data; skip duplicate walk in prebuild.
+          STOCKCONTEXT_SKIP_REMOTE_SYNC: "1"
+          STOCKCONTEXT_SKIP_CHART_SYNC: "1"
           # Apex custom domain (stockcontext.info): leave NEXT_PUBLIC_BASE_PATH empty.
           # Legacy github.io project URL: set var to /MosaicBot_StockContext
           NEXT_PUBLIC_BASE_PATH: ${{ vars.NEXT_PUBLIC_BASE_PATH }}
@@ -85,6 +102,13 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
         run: npm run build && node scripts/write-pages-deploy-meta.mjs
+      - uses: actions/cache/save@v4
+        if: success()
+        with:
+          path: |
+            .cache/stockcontext-public
+            public/chart-data
+          key: stockcontext-public-v6-${{ github.run_id }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: out

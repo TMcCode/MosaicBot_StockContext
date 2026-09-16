@@ -12,7 +12,12 @@ import {
   STOCKTHEMES_MANIFEST_URL,
   STOCKTHEMES_PUBLIC_BASE_URL,
 } from "./lib/storageConfig.mjs";
-import { downloadR2Object, r2ObjectMetadata, r2SyncEnabled } from "./lib/r2Download.mjs";
+import {
+  downloadR2Object,
+  normalizeEtag,
+  r2ObjectMetadata,
+  r2SyncEnabled,
+} from "./lib/r2Download.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, "..");
@@ -50,8 +55,23 @@ function cdnUrl(relative) {
 }
 
 function syncConcurrency() {
-  const n = Number(process.env.STOCKCONTEXT_SYNC_CONCURRENCY || 48);
-  return Number.isFinite(n) && n > 0 ? Math.min(n, 128) : 48;
+  const n = Number(process.env.STOCKCONTEXT_SYNC_CONCURRENCY || 24);
+  return Number.isFinite(n) && n > 0 ? Math.min(n, 128) : 24;
+}
+
+function skipRemoteSyncRequested() {
+  return process.env.STOCKCONTEXT_SKIP_REMOTE_SYNC === "1";
+}
+
+function skipChartSyncRequested() {
+  return process.env.STOCKCONTEXT_SKIP_CHART_SYNC === "1";
+}
+
+function cacheReadyForFastPath() {
+  return (
+    fs.existsSync(path.join(CACHE, "manifest.v0.json")) &&
+    fs.existsSync(path.join(CACHE, "feeds/home.v0.json"))
+  );
 }
 
 /** Run async work over items with a fixed worker pool (CI sync is I/O-bound). */
@@ -83,7 +103,7 @@ async function runConcurrent(items, fn) {
 }
 
 function formatEtag(etag) {
-  const bare = String(etag || "").replace(/^"|"$/g, "");
+  const bare = normalizeEtag(etag);
   return bare ? `"${bare}"` : "";
 }
 
@@ -92,7 +112,7 @@ async function downloadFromCdn(relative, meta) {
   const prev = meta.files[relative];
   const dest = path.join(CACHE, relative);
   const headers = { cache: "no-store" };
-  if (prev?.etag && fs.existsSync(dest)) {
+  if (normalizeEtag(prev?.etag) && fs.existsSync(dest)) {
     const ifNoneMatch = formatEtag(prev.etag);
     if (ifNoneMatch) headers["If-None-Match"] = ifNoneMatch;
   }
@@ -108,11 +128,11 @@ async function downloadFromCdn(relative, meta) {
     throw new Error(`CDN ${res.status} ${url}`);
   }
   const text = await res.text();
-  const etag = (res.headers.get("etag") || "").replace(/^"|"$/g, "");
+  const etag = normalizeEtag(res.headers.get("etag"));
   ensureDir(dest);
   fs.writeFileSync(dest, text);
   meta.files[relative] = {
-    etag: etag || undefined,
+    etag,
     at: new Date().toISOString(),
     source: "cdn",
   };
@@ -127,7 +147,7 @@ async function downloadStockthemesChartFile(relative, meta, { optional = false }
   const dest = path.join(CHART_DATA_DIR, rel);
   const prev = meta.files[metaKey];
   const headers = { cache: "no-store" };
-  if (prev?.etag && fs.existsSync(dest)) {
+  if (normalizeEtag(prev?.etag) && fs.existsSync(dest)) {
     const ifNoneMatch = formatEtag(prev.etag);
     if (ifNoneMatch) headers["If-None-Match"] = ifNoneMatch;
   }
@@ -148,7 +168,7 @@ async function downloadStockthemesChartFile(relative, meta, { optional = false }
     ensureDir(dest);
     fs.writeFileSync(dest, text);
     meta.files[metaKey] = {
-      etag: (res.headers.get("etag") || "").replace(/^"|"$/g, "") || undefined,
+      etag: normalizeEtag(res.headers.get("etag")),
       at: new Date().toISOString(),
       source: "stockthemes-cdn",
     };
@@ -160,6 +180,17 @@ async function downloadStockthemesChartFile(relative, meta, { optional = false }
 }
 
 async function syncChartPerformanceSidecars(manifest, meta) {
+  if (skipChartSyncRequested()) {
+    const spy = path.join(CHART_DATA_DIR, "spy_snapshot.v0.json");
+    if (fs.existsSync(spy)) {
+      console.log("sync-stockcontext-ci: skip chart sidecar sync (fast path)");
+      return 0;
+    }
+    console.log(
+      "sync-stockcontext-ci: chart skip requested but public/chart-data incomplete — fetching",
+    );
+  }
+
   const tickers = manifest.tickers || [];
   const themes = manifest.themes || [];
   const jobs = [];
@@ -181,7 +212,7 @@ async function syncChartPerformanceSidecars(manifest, meta) {
     });
   }
 
-    for (const entry of themes) {
+  for (const entry of themes) {
     const slug = String(entry?.slug || entry || "").trim();
     if (!slug) continue;
     const enc = encodeURIComponent(slug);
@@ -216,9 +247,13 @@ async function syncChartPerformanceSidecars(manifest, meta) {
 async function syncChartSelectedDates(meta) {
   const relative = "chart/selected_dates.v0.json";
   const dest = path.join(CACHE, relative);
+  if (skipChartSyncRequested() && fs.existsSync(dest)) {
+    console.log("sync-stockcontext-ci: skip chart selected_dates (fast path)");
+    return false;
+  }
   const prev = meta.files[relative];
   const headers = { cache: "no-store" };
-  if (prev?.etag && fs.existsSync(dest)) {
+  if (normalizeEtag(prev?.etag) && fs.existsSync(dest)) {
     const ifNoneMatch = formatEtag(prev.etag);
     if (ifNoneMatch) headers["If-None-Match"] = ifNoneMatch;
   }
@@ -242,9 +277,8 @@ async function syncChartSelectedDates(meta) {
     };
     ensureDir(dest);
     fs.writeFileSync(dest, `${JSON.stringify(payload, null, 2)}\n`);
-    const etag = (res.headers.get("etag") || "").replace(/^"|"$/g, "");
     meta.files[relative] = {
-      etag: etag || undefined,
+      etag: normalizeEtag(res.headers.get("etag")),
       at: new Date().toISOString(),
       source: "stockthemes-manifest",
     };
@@ -267,13 +301,18 @@ async function downloadRelative(relative, meta) {
   const prev = meta.files[relative];
   if (r2SyncEnabled()) {
     const remote = await r2ObjectMetadata(objectPath);
-    if (remote?.etag && prev?.etag === remote.etag && fs.existsSync(dest)) {
+    const prevEtag = normalizeEtag(prev?.etag);
+    const remoteEtag = normalizeEtag(remote?.etag);
+    if (remoteEtag && prevEtag === remoteEtag && fs.existsSync(dest)) {
       return false;
     }
     const text = await downloadR2Object(objectPath);
     ensureDir(dest);
     fs.writeFileSync(dest, text);
-    meta.files[relative] = { etag: remote?.etag, at: new Date().toISOString() };
+    meta.files[relative] = {
+      etag: remoteEtag || normalizeEtag(remote?.etag),
+      at: new Date().toISOString(),
+    };
     return true;
   }
   return false;
@@ -450,8 +489,20 @@ async function main() {
   const meta = loadMeta();
   let downloaded = 0;
 
-  const remoteSync = cdnSyncEnabled() || r2SyncEnabled();
-  if (cdnSyncEnabled()) {
+  const credentialsReady = cdnSyncEnabled() || r2SyncEnabled();
+  const fastPath =
+    skipRemoteSyncRequested() && cacheReadyForFastPath() && !cdnSyncEnabled();
+  if (skipRemoteSyncRequested() && !fastPath) {
+    console.log(
+      "sync-stockcontext-ci: skip remote requested but cache incomplete — full sync",
+    );
+  }
+  const remoteSync = credentialsReady && !fastPath;
+  if (fastPath) {
+    console.log(
+      `sync-stockcontext-ci: code-only fast path (reuse Actions cache, concurrency=${syncConcurrency()})`,
+    );
+  } else if (cdnSyncEnabled()) {
     console.log(
       `sync-stockcontext-ci: using public CDN (STOCKCONTEXT_SYNC_VIA_CDN=1, concurrency=${syncConcurrency()})`,
     );
@@ -502,7 +553,9 @@ async function main() {
   } else {
     const manifestPath = path.join(CACHE, "manifest.v0.json");
     if (fs.existsSync(manifestPath)) {
-      console.log("sync-stockcontext-ci: using existing cache (no remote sync env)");
+      if (!fastPath) {
+        console.log("sync-stockcontext-ci: using existing cache (no remote sync env)");
+      }
     } else {
       seedFromExamples(meta);
     }
@@ -528,7 +581,7 @@ async function main() {
       );
       process.exit(1);
     }
-  } else if (remoteSync) {
+  } else if (remoteSync || fastPath) {
     const total = manifest.stats?.total_tickers ?? manifest.tickers?.length ?? 0;
     console.log(
       `sync-stockcontext-ci: manifest build_id=${manifest.build_id} tickers=${total} themes=${manifest.stats?.total_themes ?? manifest.themes?.length ?? 0}`,

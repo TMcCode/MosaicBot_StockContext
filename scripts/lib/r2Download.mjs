@@ -248,9 +248,17 @@ export async function r2ObjectMetadata(objectPath) {
   } else if (!res.ok) {
     throw new Error(`R2 metadata ${res.status} s3://${req.bucket}/${objectPath}`);
   }
-  const etag = (res.headers.get("etag") || "").replace(/^"|"$/g, "");
   return {
-    etag: etag || undefined,
+    etag: normalizeEtag(res.headers.get("etag")),
     lastModified: res.headers.get("last-modified") || undefined,
   };
+}
+
+/** Strip weak markers / quotes so HEAD vs stored meta comparisons stay stable. */
+export function normalizeEtag(etag) {
+  const bare = String(etag || "")
+    .trim()
+    .replace(/^W\//i, "")
+    .replace(/^"|"$/g, "");
+  return bare || undefined;
 }
