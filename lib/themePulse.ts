@@ -1,9 +1,24 @@
-import { publicDataFetchUrls } from "@/lib/dataUrls";
+import { stockthemesBrowserChartFetchBase } from "@/lib/chart/stockthemesPublicBase";
 import type {
   ThemePulseDayV0,
   ThemePulseIndexV0,
   ThemePulseThemeV0,
 } from "@/lib/types/theme.pulse.v0";
+
+/**
+ * Pulse JSON is published under stockcontext/ on the CDN, but production Pages
+ * cannot cross-origin fetch storage.stockthemes.ai (no CORS for stockcontext.info).
+ * CI bakes the same keys into /chart-data/stockcontext/… (dev uses the CDN rewrite).
+ */
+function pulseFetchUrl(relativePath: string): string {
+  const rel = relativePath.replace(/^\//, "");
+  const base = stockthemesBrowserChartFetchBase();
+  if (process.env.NODE_ENV === "development") {
+    // /stockthemes-data → storage.stockthemes.ai/*
+    return `${base}/stockcontext/${rel}`;
+  }
+  return `${base}/stockcontext/${rel}`;
+}
 
 function record(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value)
@@ -98,22 +113,20 @@ function parseDay(raw: unknown): ThemePulseDayV0 | null {
 }
 
 async function fetchJson(relativePath: string, signal?: AbortSignal): Promise<unknown | null> {
-  const urls = publicDataFetchUrls(relativePath.replace(/^\//, ""));
-  for (const url of urls) {
-    try {
-      const res = await fetch(url, {
-        credentials: "omit",
-        cache: "no-store",
-        signal,
-      });
-      if (res.status === 404) return null;
-      if (!res.ok) continue;
-      return await res.json();
-    } catch (err) {
-      if (signal?.aborted) throw err;
-    }
+  const url = pulseFetchUrl(relativePath);
+  try {
+    const res = await fetch(url, {
+      credentials: "omit",
+      cache: "no-store",
+      signal,
+    });
+    if (res.status === 404) return null;
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (err) {
+    if (signal?.aborted) throw err;
+    return null;
   }
-  return null;
 }
 
 export async function fetchThemePulseIndex(

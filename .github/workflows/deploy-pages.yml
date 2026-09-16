@@ -91,7 +91,8 @@ jobs:
       - name: Build static export
         env:
           CI: "true"
-          # Sync step already populated cache/chart-data; skip duplicate walk in prebuild.
+          # Sync step already populated cache; skip duplicate R2 walk in prebuild.
+          # Pulse sidecars still sync in prebuild via syncThemePulseSidecars (etag).
           STOCKCONTEXT_SKIP_REMOTE_SYNC: "1"
           STOCKCONTEXT_SKIP_CHART_SYNC: "1"
           # Apex custom domain (stockcontext.info): leave NEXT_PUBLIC_BASE_PATH empty.
