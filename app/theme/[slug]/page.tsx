@@ -5,6 +5,7 @@ import { PageReadControl } from "@/components/PageReadControl";
 import { TableSection } from "@/components/TableSection";
 import { ThemeChartSection } from "@/components/ThemeChartSection";
 import { ThemeCorrMatrixPanel } from "@/components/ThemeCorrMatrixPanel";
+import { ThemePulsePanel } from "@/components/ThemePulsePanel";
 import { ThemeQuantPanel } from "@/components/ThemeQuantPanel";
 import { TierBadge } from "@/components/TierBadge";
 import {
@@ -166,6 +167,7 @@ export default async function ThemePage({ params }: Props) {
         </>
       )}
 
+      <ThemePulsePanel slug={slug} themeName={meta.name} />
       <ThemeCorrMatrixPanel slug={slug} themeName={meta.name} />
 
       <section className="card">
