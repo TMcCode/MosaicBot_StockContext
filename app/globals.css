@@ -881,6 +881,49 @@ a:hover {
   font-size: 0.875rem;
 }
 
+.monitoring-watchlist-registry {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.65rem;
+  margin: 0 0 0.35rem;
+  font-size: 0.8125rem;
+}
+
+.monitoring-watchlist-registry-label {
+  font-weight: 600;
+}
+
+.monitoring-watchlist-registry-detail {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.75rem;
+  opacity: 0.9;
+}
+
+.monitoring-watchlist-registry.match-high .monitoring-watchlist-registry-label {
+  color: var(--accent, #26fcd6);
+}
+
+.monitoring-watchlist-registry.match-medium .monitoring-watchlist-registry-label {
+  color: #e6c07b;
+}
+
+.monitoring-watchlist-registry.match-none .monitoring-watchlist-registry-label {
+  color: var(--text-muted, var(--muted));
+}
+
+.prediction-market-venue {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+.prediction-market-slug {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.8125rem;
+  word-break: break-all;
+}
+
 .thesis-block + .bull-bear-grid {
   margin-top: 0.25rem;
 }

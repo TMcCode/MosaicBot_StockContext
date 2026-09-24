@@ -40,6 +40,7 @@ export const TICKER_OVERVIEW_COLUMN_ORDER: string[] = [
   "EconomicDataWatch",
   "FreeAltDataWatch",
   "PaidAltDataWatch",
+  "PredictionMarketWatch",
 ];
 
 export function isTickerOverviewBottomPairColumn(columnId: string): boolean {

@@ -1,10 +1,12 @@
 /** Parse + display helpers for Theme_Overview JSON columns (mirrors utils/theme_overview_schema.py). */
 
 import {
+  formatPredictionMarketText,
   formatPublicationsText,
   formatWatchlistText,
   isMonitoringOverviewColumn,
   isMonitoringWatchlistColumn,
+  isPredictionMarketColumn,
 } from "./monitoringWatchlistFormat";
 
 export type ForumWatchlistEntry = {
@@ -268,6 +270,7 @@ export function formatSearchKeywordsText(raw: string): string {
 const THEME_OVERVIEW_JSON_COLUMNS = new Set([
   "ForumWatchlist",
   "IndustryPublications",
+  "PredictionMarketWatch",
   "SearchKeywordsNow",
   "GoogleTrendKeywordsNow",
   "EconomicDataWatch",
@@ -413,6 +416,7 @@ export const THEME_OVERVIEW_SECTION_LABELS: { id: string; label: string }[] = [
   { id: "EconomicDataWatch", label: "Economic data watch" },
   { id: "FreeAltDataWatch", label: "Free alt data watch" },
   { id: "PaidAltDataWatch", label: "Paid alt data watch" },
+  { id: "PredictionMarketWatch", label: "Prediction market watch" },
   { id: "TopDatasetsToTrack", label: "Top datasets to track" },
 ];
 
@@ -433,6 +437,7 @@ export const THEME_OVERVIEW_COLUMN_ORDER: string[] = [
   "EconomicDataWatch",
   "FreeAltDataWatch",
   "PaidAltDataWatch",
+  "PredictionMarketWatch",
 ];
 
 export function sortThemeOverviewColumns<T extends { id: string }>(cols: T[]): T[] {
@@ -451,6 +456,7 @@ export function formatThemeOverviewField(columnId: string, raw: string): string 
   if (!v) return "";
   if (columnId === "ForumWatchlist") return formatForumWatchlistText(v);
   if (columnId === "IndustryPublications") return formatPublicationsText(v);
+  if (isPredictionMarketColumn(columnId)) return formatPredictionMarketText(v);
   if (isMonitoringWatchlistColumn(columnId)) return formatWatchlistText(v);
   if (columnId === "SearchKeywordsNow") return formatSearchKeywordsText(v);
   if (isSearchKeywordColumn(columnId)) {

@@ -22,6 +22,11 @@ export type WatchlistEntry = {
   why_it_matters?: string;
   signal_to_watch?: string;
   confidence?: string;
+  /** Post-process registry stamp (high | medium | none). Absent = not yet stamped. */
+  dataset_id?: string;
+  access?: string;
+  registry_match?: string;
+  registry_status?: string;
 };
 
 export type KeyInputEntry = {
@@ -33,12 +38,29 @@ export type KeyInputEntry = {
   est_cogs_share?: string;
   confidence?: string;
   source_or_comment?: string;
+  dataset_id?: string;
+  access?: string;
+  registry_match?: string;
+  registry_status?: string;
 };
 
 export type PublicationEntry = {
   name: string;
   domain?: string;
   why?: string;
+};
+
+export type PredictionMarketEntry = {
+  venue?: string;
+  market_url_or_slug?: string;
+  question?: string;
+  why_stock_matters?: string;
+  suggested_series_key?: string;
+  confidence?: string;
+  dataset_id?: string;
+  access?: string;
+  registry_match?: string;
+  registry_status?: string;
 };
 
 function fieldStr(value: unknown): string {
@@ -74,9 +96,22 @@ function normalizeWatchlistItem(item: unknown): WatchlistEntry | null {
     why_it_matters: fieldStr(o.why_it_matters),
     signal_to_watch: fieldStr(o.signal_to_watch),
     confidence: fieldStr(o.confidence),
+    dataset_id: fieldStr(o.dataset_id),
+    access: fieldStr(o.access),
+    registry_match: fieldStr(o.registry_match),
+    registry_status: fieldStr(o.registry_status),
   };
   if (!Object.values(entry).some(Boolean)) return null;
   return entry;
+}
+
+/** high | medium | none | "" (unstamped). */
+export function registryMatchLabel(match: string | undefined): string {
+  const m = fieldStr(match).toLowerCase();
+  if (m === "high") return "Matched";
+  if (m === "medium") return "Matched (medium)";
+  if (m === "none") return "Not in registry";
+  return "";
 }
 
 export function parseWatchlistEntries(raw: string): WatchlistEntry[] {
@@ -101,6 +136,10 @@ function normalizeKeyInputItem(item: unknown): KeyInputEntry | null {
     est_cogs_share: fieldStr(o.est_cogs_share),
     confidence: fieldStr(o.confidence),
     source_or_comment: fieldStr(o.source_or_comment),
+    dataset_id: fieldStr(o.dataset_id),
+    access: fieldStr(o.access),
+    registry_match: fieldStr(o.registry_match),
+    registry_status: fieldStr(o.registry_status),
   };
 }
 
@@ -138,6 +177,41 @@ export function parsePublicationEntries(raw: string): PublicationEntry[] {
   return list.map(normalizePublicationItem).filter((e): e is PublicationEntry => e != null);
 }
 
+function normalizePredictionMarketItem(item: unknown): PredictionMarketEntry | null {
+  if (!item || typeof item !== "object" || Array.isArray(item)) return null;
+  const o = item as Record<string, unknown>;
+  const entry: PredictionMarketEntry = {
+    venue: fieldStr(o.venue).toLowerCase(),
+    market_url_or_slug: fieldStr(o.market_url_or_slug),
+    question: fieldStr(o.question),
+    why_stock_matters: fieldStr(o.why_stock_matters),
+    suggested_series_key: fieldStr(o.suggested_series_key),
+    confidence: fieldStr(o.confidence),
+    dataset_id: fieldStr(o.dataset_id),
+    access: fieldStr(o.access),
+    registry_match: fieldStr(o.registry_match),
+    registry_status: fieldStr(o.registry_status),
+  };
+  if (!entry.market_url_or_slug && !entry.question) return null;
+  if (!entry.why_stock_matters) return null;
+  return entry;
+}
+
+export function parsePredictionMarketEntries(raw: string): PredictionMarketEntry[] {
+  const parsed = parseJsonCell(raw);
+  if (parsed == null) return [];
+  const list = unwrapList(parsed, ["items", "markets", "PredictionMarketWatch"]);
+  if (!list) return [];
+  return list
+    .map(normalizePredictionMarketItem)
+    .filter((e): e is PredictionMarketEntry => e != null)
+    .slice(0, 3);
+}
+
+export function isPredictionMarketColumn(columnId: string): boolean {
+  return columnId === "PredictionMarketWatch";
+}
+
 export function isMonitoringWatchlistColumn(columnId: string): boolean {
   return (MONITORING_WATCHLIST_COLUMN_IDS as readonly string[]).includes(columnId);
 }
@@ -146,6 +220,7 @@ export function isMonitoringOverviewColumn(columnId: string): boolean {
   return (
     columnId === "KeyInputsAndSourcing" ||
     columnId === "IndustryPublications" ||
+    isPredictionMarketColumn(columnId) ||
     isMonitoringWatchlistColumn(columnId)
   );
 }
@@ -165,9 +240,27 @@ export function formatWatchlistText(raw: string): string {
       if (item.why_it_matters) lines.push(`   Why: ${item.why_it_matters}`);
       if (item.signal_to_watch) lines.push(`   Signal: ${item.signal_to_watch}`);
       if (item.confidence) lines.push(`   Confidence: ${item.confidence}`);
+      const reg = formatRegistryLine(item);
+      if (reg) lines.push(`   ${reg}`);
       return lines.join("\n");
     })
     .join("\n");
+}
+
+function formatRegistryLine(item: {
+  dataset_id?: string;
+  access?: string;
+  registry_match?: string;
+  registry_status?: string;
+}): string {
+  const label = registryMatchLabel(item.registry_match);
+  if (!label && !item.dataset_id && !item.access) return "";
+  const bits: string[] = [];
+  if (label) bits.push(label);
+  if (item.dataset_id) bits.push(`dataset_id=${item.dataset_id}`);
+  if (item.access) bits.push(`access=${item.access}`);
+  if (item.registry_status) bits.push(`status=${item.registry_status}`);
+  return `Registry: ${bits.join(", ")}`;
 }
 
 export function formatKeyInputsText(raw: string): string {
@@ -188,6 +281,8 @@ export function formatKeyInputsText(raw: string): string {
       ];
       if (item.source_or_comment) lines.push(`   Source: ${item.source_or_comment}`);
       if (item.confidence) lines.push(`   Confidence: ${item.confidence}`);
+      const reg = formatRegistryLine(item);
+      if (reg) lines.push(`   ${reg}`);
       return lines.join("\n");
     })
     .join("\n");
@@ -202,4 +297,39 @@ export function formatPublicationsText(raw: string): string {
       return item.why ? `${head} — ${item.why}` : head;
     })
     .join("\n");
+}
+
+/** Bullet-list fallback (matches Python format_prediction_market_array). */
+export function formatPredictionMarketText(raw: string): string {
+  const entries = parsePredictionMarketEntries(raw);
+  if (!entries.length) {
+    const t = fieldStr(raw);
+    if (!t || t === "[]") return "(none — no stock-relevant prediction markets)";
+    return t;
+  }
+  return entries
+    .map((item, i) => {
+      const head = item.question || item.market_url_or_slug || `Market ${i + 1}`;
+      const titled = item.venue ? `[${item.venue}] ${head}` : head;
+      const lines = [`${i + 1}. ${titled}`];
+      if (item.market_url_or_slug && item.market_url_or_slug !== item.question) {
+        lines.push(`   URL/slug: ${item.market_url_or_slug}`);
+      }
+      if (item.why_stock_matters) lines.push(`   Why stock: ${item.why_stock_matters}`);
+      if (item.suggested_series_key) lines.push(`   series_key: ${item.suggested_series_key}`);
+      if (item.confidence) lines.push(`   Confidence: ${item.confidence}`);
+      const reg = formatRegistryLine(item);
+      if (reg) lines.push(`   ${reg}`);
+      return lines.join("\n");
+    })
+    .join("\n");
+}
+
+export function predictionMarketVenueLabel(venue: string | undefined): string {
+  const v = fieldStr(venue).toLowerCase();
+  if (v === "polymarket") return "Polymarket";
+  if (v === "kalshi") return "Kalshi";
+  if (v === "manifold") return "Manifold";
+  if (v === "other") return "Other";
+  return v ? v.charAt(0).toUpperCase() + v.slice(1) : "";
 }

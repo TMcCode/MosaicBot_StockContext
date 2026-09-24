@@ -48,8 +48,10 @@ import { CollapsibleTranscriptRowsTable } from "./CollapsibleTranscriptRowsTable
 import { IndustryPublicationsField } from "./IndustryPublicationsField";
 import { KeyInputsField } from "./KeyInputsField";
 import { MonitoringWatchlistField } from "./MonitoringWatchlistField";
+import { PredictionMarketWatchField } from "./PredictionMarketWatchField";
 import {
   isMonitoringWatchlistColumn,
+  isPredictionMarketColumn,
 } from "@/lib/monitoringWatchlistFormat";
 
 export function TableSectionContent({ body }: { body: TableBody }) {
@@ -86,6 +88,7 @@ function overviewFieldDisplay(
   if (col.id === "ForumWatchlist") return <ForumWatchlistField raw={raw} />;
   if (col.id === "KeyInputsAndSourcing") return <KeyInputsField raw={raw} />;
   if (col.id === "IndustryPublications") return <IndustryPublicationsField raw={raw} />;
+  if (isPredictionMarketColumn(col.id)) return <PredictionMarketWatchField raw={raw} />;
   if (isMonitoringWatchlistColumn(col.id)) return <MonitoringWatchlistField raw={raw} />;
   if (col.id === "SearchKeywordsNow") return <SearchKeywordsField raw={raw} />;
   if (isSearchKeywordColumn(col.id) && col.id !== "SearchKeywordsNow") {
