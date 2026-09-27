@@ -59,6 +59,18 @@ async function fetchHomeFeedAsOf() {
   );
 }
 
+/** Theme news catalog as_of only moves when a theme feed changed; optional (never blocks). */
+async function fetchThemeNewsAsOf() {
+  try {
+    return await fetchJsonAsOf(
+      "news/themes_catalog.v0.json",
+      `${STOCKCONTEXT_PUBLIC_BASE_URL}/news/themes_catalog.v0.json`,
+    );
+  } catch {
+    return "";
+  }
+}
+
 async function main() {
   const event = process.env.GITHUB_EVENT_NAME || "";
   const force = process.env.FORCE_BUILD === "true" || process.env.FORCE_BUILD === "1";
@@ -71,7 +83,11 @@ async function main() {
     return;
   }
 
-  const [manifestAsOf, homeFeedAsOf] = await Promise.all([fetchManifestAsOf(), fetchHomeFeedAsOf()]);
+  const [manifestAsOf, homeFeedAsOf, themeNewsAsOf] = await Promise.all([
+    fetchManifestAsOf(),
+    fetchHomeFeedAsOf(),
+    fetchThemeNewsAsOf(),
+  ]);
   const deployed = readDeployedMeta();
   if (!deployed.manifestAsOf && !deployed.homeFeedAsOf) {
     writeOutputs({ shouldBuild: true, reason: "no prior deploy meta" });
@@ -91,9 +107,16 @@ async function main() {
     });
     return;
   }
+  if (themeNewsAsOf && themeNewsAsOf !== deployed.themeNewsAsOf) {
+    writeOutputs({
+      shouldBuild: true,
+      reason: `theme news as_of changed ${deployed.themeNewsAsOf || "(none)"} → ${themeNewsAsOf}`,
+    });
+    return;
+  }
   writeOutputs({
     shouldBuild: false,
-    reason: `publish unchanged (manifest=${manifestAsOf}, home=${homeFeedAsOf})`,
+    reason: `publish unchanged (manifest=${manifestAsOf}, home=${homeFeedAsOf}, news=${themeNewsAsOf})`,
   });
 }
 

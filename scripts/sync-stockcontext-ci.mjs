@@ -332,6 +332,59 @@ async function syncThemePulseSidecars(manifest, meta) {
   return downloaded;
 }
 
+const THEME_NEWS_CATALOG = "news/themes_catalog.v0.json";
+
+/**
+ * Bake per-theme news feeds (index + month files) into public/chart-data/stockcontext/…
+ * The catalog lists every file with a content hash, so unchanged files need no request.
+ * Only themes with stockcontext pages are synced.
+ */
+async function syncThemeNewsSidecars(manifest, meta) {
+  const catalogPath = path.join(CHART_DATA_DIR, "stockcontext", THEME_NEWS_CATALOG);
+  await downloadStockcontextPulseFile(THEME_NEWS_CATALOG, meta, { optional: true });
+  if (!fs.existsSync(catalogPath)) {
+    console.log("sync-stockcontext-ci: theme news catalog missing — skipped");
+    return 0;
+  }
+  let catalog;
+  try {
+    catalog = JSON.parse(fs.readFileSync(catalogPath, "utf8"));
+  } catch {
+    console.log("sync-stockcontext-ci: theme news catalog unreadable — skipped");
+    return 0;
+  }
+
+  const pageSlugs = new Set();
+  for (const entry of manifest.themes || []) {
+    const slug = String(entry?.slug || entry || "").trim();
+    if (!slug) continue;
+    if (entry?.meta_url && entry?.has_table_data === false) continue;
+    pageSlugs.add(slug);
+  }
+
+  const jobs = [];
+  for (const [rel, hash] of Object.entries(catalog.files || {})) {
+    const m = /^themes\/([^/]+)\/news\/[^/]+\.v0\.json$/.exec(rel);
+    if (!m || !pageSlugs.has(m[1])) continue;
+    const dest = path.join(CHART_DATA_DIR, "stockcontext", rel);
+    if (meta.files[`chart-data/stockcontext/${rel}`]?.hash === hash && fs.existsSync(dest)) continue;
+    jobs.push({ rel, hash });
+  }
+
+  let downloaded = 0;
+  await runConcurrent(jobs, async ({ rel, hash }) => {
+    const ok = await downloadStockcontextPulseFile(rel, meta, { optional: true });
+    const entry = meta.files[`chart-data/stockcontext/${rel}`];
+    if (entry && fs.existsSync(path.join(CHART_DATA_DIR, "stockcontext", rel))) entry.hash = hash;
+    if (ok) downloaded += 1;
+  });
+
+  console.log(
+    `sync-stockcontext-ci: theme news ok (${downloaded} updated, ${jobs.length} checked, as_of=${catalog.as_of || "?"})`,
+  );
+  return downloaded;
+}
+
 /** Slim chart config from sister-site manifest (custom period buttons). */
 async function syncChartSelectedDates(meta) {
   const relative = "chart/selected_dates.v0.json";
@@ -663,7 +716,10 @@ async function main() {
   fs.mkdirSync(CHART_DATA_DIR, { recursive: true });
   await syncChartPerformanceSidecars(manifest, meta);
   saveMeta(meta);
-  await syncThemePulseSidecars(manifest, meta);
+  // Theme pulse paused (news section replaced it on theme pages); keep for re-enable.
+  // await syncThemePulseSidecars(manifest, meta);
+  // saveMeta(meta);
+  await syncThemeNewsSidecars(manifest, meta);
   saveMeta(meta);
   if (manifest.build_id === "example-local-001") {
     if (process.env.CI === "true" || remoteSync) {

@@ -5,7 +5,9 @@ import { PageReadControl } from "@/components/PageReadControl";
 import { TableSection } from "@/components/TableSection";
 import { ThemeChartSection } from "@/components/ThemeChartSection";
 import { ThemeCorrMatrixPanel } from "@/components/ThemeCorrMatrixPanel";
-import { ThemePulsePanel } from "@/components/ThemePulsePanel";
+import { ThemeNewsPanel } from "@/components/ThemeNewsPanel";
+// Theme pulse paused (replaced by ThemeNewsPanel); keep for re-enable.
+// import { ThemePulsePanel } from "@/components/ThemePulsePanel";
 import { ThemeQuantPanel } from "@/components/ThemeQuantPanel";
 import { TierBadge } from "@/components/TierBadge";
 import {
@@ -17,6 +19,7 @@ import {
 } from "@/lib/data";
 import { href, stockthemesThemeUrl, tickerHref } from "@/lib/links";
 import { formatDateOnly } from "@/lib/tableDisplay";
+import { loadThemeNewsIndex } from "@/lib/themeNewsServer";
 import {
   formatThemeContentStats,
   formatTickerCoverageStats,
@@ -35,10 +38,11 @@ type Props = { params: Promise<{ slug: string }> };
 
 export default async function ThemePage({ params }: Props) {
   const { slug } = await params;
-  const [meta, tablesIndex, chartSelectedDates] = await Promise.all([
+  const [meta, tablesIndex, chartSelectedDates, newsIndex] = await Promise.all([
     loadThemeMeta(slug),
     loadThemeTablesIndex(slug),
     loadChartSelectedDates(),
+    loadThemeNewsIndex(slug),
   ]);
   if (!meta) {
     notFound();
@@ -167,7 +171,8 @@ export default async function ThemePage({ params }: Props) {
         </>
       )}
 
-      <ThemePulsePanel slug={slug} themeName={meta.name} />
+      {/* <ThemePulsePanel slug={slug} themeName={meta.name} /> */}
+      {newsIndex ? <ThemeNewsPanel slug={slug} themeName={meta.name} index={newsIndex} /> : null}
       <ThemeCorrMatrixPanel slug={slug} themeName={meta.name} />
 
       <section className="card">

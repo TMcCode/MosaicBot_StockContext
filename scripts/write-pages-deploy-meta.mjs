@@ -23,6 +23,22 @@ if (fs.existsSync(homePath)) {
     homeFeedAsOf = "";
   }
 }
+const newsCatalogPath = path.join(
+  root,
+  "public",
+  "chart-data",
+  "stockcontext",
+  "news",
+  "themes_catalog.v0.json",
+);
+let themeNewsAsOf = "";
+if (fs.existsSync(newsCatalogPath)) {
+  try {
+    themeNewsAsOf = JSON.parse(fs.readFileSync(newsCatalogPath, "utf8")).as_of || "";
+  } catch {
+    themeNewsAsOf = "";
+  }
+}
 fs.mkdirSync(CACHE, { recursive: true });
 fs.writeFileSync(
   DEPLOY_META,
@@ -30,6 +46,7 @@ fs.writeFileSync(
     {
       manifestAsOf: manifest.as_of || "",
       homeFeedAsOf,
+      themeNewsAsOf,
       buildId: manifest.build_id || "",
       writtenAt: new Date().toISOString(),
     },
