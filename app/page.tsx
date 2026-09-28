@@ -4,19 +4,28 @@ import { HomeFeedSection } from "@/components/HomeFeedSection";
 import { HomeHero } from "@/components/HomeHero";
 import { HomeRecentUpdatesMarquee } from "@/components/HomeRecentUpdatesMarquee";
 import { HomeUpdatesToReadRow } from "@/components/HomeUpdatesToReadRow";
+import { loadAllNewsIndex, loadLatestNewsStories } from "@/lib/allNewsServer";
 import { loadHomeFeeds, loadManifest, loadRecentUpdatesMarquee } from "@/lib/data";
 import { formatMarqueeAsOfLabel } from "@/lib/formatMarqueeAsOf";
 import { href, themeHref } from "@/lib/links";
 import { isLegacyUniverseFeed, orderedHomeSections } from "@/lib/homeFeedDisplay";
 import { themeHasPublishedPage } from "@/lib/themePage";
 
+const HOME_NEWS_HEADLINES = 20;
+
 export default async function HomePage() {
-  const [manifest, home, recentMarquee] = await Promise.all([
+  const [manifest, home, recentMarquee, newsIndex] = await Promise.all([
     loadManifest(),
     loadHomeFeeds(),
     loadRecentUpdatesMarquee(),
+    loadAllNewsIndex(),
   ]);
   const marqueeAsOfLabel = formatMarqueeAsOfLabel(recentMarquee?.as_of);
+  const headlines = (await loadLatestNewsStories(newsIndex, HOME_NEWS_HEADLINES)).map(({ i, t, u }) => ({
+    i,
+    t,
+    u,
+  }));
 
   if (!manifest) {
     return (
@@ -46,8 +55,12 @@ export default async function HomePage() {
     <>
       <HomeHero buildId={manifest.build_id} />
 
-      {recentMarquee ? (
-        <HomeRecentUpdatesMarquee data={recentMarquee} asOfLabel={marqueeAsOfLabel} />
+      {recentMarquee || headlines.length ? (
+        <HomeRecentUpdatesMarquee
+          data={recentMarquee}
+          asOfLabel={marqueeAsOfLabel}
+          news={headlines}
+        />
       ) : null}
 
       {legacyFeed ? (

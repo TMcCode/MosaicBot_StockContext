@@ -385,6 +385,61 @@ async function syncThemeNewsSidecars(manifest, meta) {
   return downloaded;
 }
 
+const ALL_NEWS_INDEX = "news/all/index.v0.json";
+
+/**
+ * Bake the 90-day all-news feed (/news page + home crawler) into public/chart-data/stockcontext/…
+ * The index lists every week file with a content hash; only changed weeks are downloaded and
+ * weeks that aged out of the window are removed from the export.
+ */
+async function syncAllNews(meta) {
+  const indexPath = path.join(CHART_DATA_DIR, "stockcontext", ALL_NEWS_INDEX);
+  await downloadStockcontextPulseFile(ALL_NEWS_INDEX, meta, { optional: true });
+  if (!fs.existsSync(indexPath)) {
+    console.log("sync-stockcontext-ci: all news index missing — skipped");
+    return 0;
+  }
+  let index;
+  try {
+    index = JSON.parse(fs.readFileSync(indexPath, "utf8"));
+  } catch {
+    console.log("sync-stockcontext-ci: all news index unreadable — skipped");
+    return 0;
+  }
+
+  const weekDir = path.join(CHART_DATA_DIR, "stockcontext", "news", "all", "weeks");
+  const wanted = new Set();
+  const jobs = [];
+  for (const { w, h } of index.weeks || []) {
+    if (!/^\d{4}-W\d{2}$/.test(String(w || ""))) continue;
+    const rel = `news/all/weeks/${w}.v0.json`;
+    wanted.add(`${w}.v0.json`);
+    if (meta.files[`chart-data/stockcontext/${rel}`]?.hash === h && fs.existsSync(path.join(weekDir, `${w}.v0.json`))) continue;
+    jobs.push({ rel, hash: h });
+  }
+
+  let downloaded = 0;
+  await runConcurrent(jobs, async ({ rel, hash }) => {
+    const ok = await downloadStockcontextPulseFile(rel, meta, { optional: true });
+    const entry = meta.files[`chart-data/stockcontext/${rel}`];
+    if (entry && fs.existsSync(path.join(CHART_DATA_DIR, "stockcontext", rel))) entry.hash = hash;
+    if (ok) downloaded += 1;
+  });
+
+  if (fs.existsSync(weekDir)) {
+    for (const name of fs.readdirSync(weekDir)) {
+      if (wanted.has(name)) continue;
+      fs.rmSync(path.join(weekDir, name), { force: true });
+      delete meta.files[`chart-data/stockcontext/news/all/weeks/${name}`];
+    }
+  }
+
+  console.log(
+    `sync-stockcontext-ci: all news ok (${index.total ?? "?"} stories, ${downloaded} week files updated, as_of=${index.as_of || "?"})`,
+  );
+  return downloaded;
+}
+
 /** Slim chart config from sister-site manifest (custom period buttons). */
 async function syncChartSelectedDates(meta) {
   const relative = "chart/selected_dates.v0.json";
@@ -720,6 +775,8 @@ async function main() {
   // await syncThemePulseSidecars(manifest, meta);
   // saveMeta(meta);
   await syncThemeNewsSidecars(manifest, meta);
+  saveMeta(meta);
+  await syncAllNews(meta);
   saveMeta(meta);
   if (manifest.build_id === "example-local-001") {
     if (process.env.CI === "true" || remoteSync) {

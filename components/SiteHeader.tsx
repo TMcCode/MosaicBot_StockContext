@@ -45,6 +45,9 @@ export function SiteHeader() {
               <Link href={href("/tickers")} className="site-nav-browse-item" role="menuitem">
                 All tickers
               </Link>
+              <Link href={href("/news")} className="site-nav-browse-item" role="menuitem">
+                All news
+              </Link>
             </div>
           </div>
           <SiteNavAuth />

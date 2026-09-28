@@ -78,6 +78,19 @@
   color: var(--text-muted, var(--muted));
 }
 
+.rowAction {
+  margin-left: 8px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--accent, #26fcd6);
+  text-decoration: none;
+}
+
+.rowAction:hover {
+  text-decoration: underline;
+}
+
 .viewport {
   overflow-x: auto;
   overflow-y: hidden;
@@ -154,6 +167,11 @@
   max-width: 220px;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.newsName {
+  max-width: 360px;
+  font-weight: 500;
 }
 
 .chipTags {
