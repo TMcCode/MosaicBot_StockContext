@@ -12,6 +12,8 @@ import { isLegacyUniverseFeed, orderedHomeSections } from "@/lib/homeFeedDisplay
 import { themeHasPublishedPage } from "@/lib/themePage";
 
 const HOME_NEWS_HEADLINES = 20;
+/** Rows arrive newest first; a longer crawl is never seen at the slow speed and bloats the page. */
+const MARQUEE_ROW_MAX = 40;
 
 export default async function HomePage() {
   const [manifest, home, recentMarquee, newsIndex] = await Promise.all([
@@ -57,7 +59,17 @@ export default async function HomePage() {
 
       {recentMarquee || headlines.length ? (
         <HomeRecentUpdatesMarquee
-          data={recentMarquee}
+          data={
+            recentMarquee && {
+              ...recentMarquee,
+              ticker_rows: (recentMarquee.ticker_rows ?? []).slice(0, MARQUEE_ROW_MAX),
+              theme_rows: (recentMarquee.theme_rows ?? []).slice(0, MARQUEE_ROW_MAX),
+            }
+          }
+          totals={{
+            tickers: recentMarquee?.ticker_rows?.length ?? 0,
+            themes: recentMarquee?.theme_rows?.length ?? 0,
+          }}
           asOfLabel={marqueeAsOfLabel}
           news={headlines}
         />

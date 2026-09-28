@@ -23,8 +23,8 @@ type Row = { item: AllNewsItemV0; groups: string[]; sectors: string[] };
 type ThemeOption = { slug: string; name: string; group: string | null; sector: string | null };
 
 type Props = {
+  /** Baked at build for instant paint; replaced by the live index once it loads. */
   initialStories: AllNewsStory[];
-  asOf?: string;
   windowDays: number;
   pageSize: number;
 };
@@ -66,7 +66,7 @@ function detailOf(story: AllNewsStory): AllNewsDetailV0 {
   return { t: story.t, s: story.s, u: story.u, n: story.n };
 }
 
-export function NewsBrowser({ initialStories, asOf, windowDays, pageSize }: Props) {
+export function NewsBrowser({ initialStories, windowDays, pageSize }: Props) {
   const defaultFilters = useMemo<Filters>(
     () => ({ sector: "", group: "", theme: "", ticker: "", days: windowDays }),
     [windowDays],
@@ -102,13 +102,13 @@ export function NewsBrowser({ initialStories, asOf, windowDays, pageSize }: Prop
 
   useEffect(() => {
     const ctrl = new AbortController();
-    fetchAllNewsIndex(asOf, ctrl.signal)
+    fetchAllNewsIndex(ctrl.signal)
       .then((idx) => (idx ? setIndex(idx) : setIndexFailed(true)))
       .catch(() => {
         if (!ctrl.signal.aborted) setIndexFailed(true);
       });
     return () => ctrl.abort();
-  }, [asOf]);
+  }, []);
 
   const applyFilters = useCallback(
     (next: Filters) => {

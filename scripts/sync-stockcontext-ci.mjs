@@ -395,6 +395,7 @@ const ALL_NEWS_INDEX = "news/all/index.v0.json";
 async function syncAllNews(meta) {
   const indexPath = path.join(CHART_DATA_DIR, "stockcontext", ALL_NEWS_INDEX);
   await downloadStockcontextPulseFile(ALL_NEWS_INDEX, meta, { optional: true });
+  await downloadStockcontextPulseFile("news/all/latest.v0.json", meta, { optional: true });
   if (!fs.existsSync(indexPath)) {
     console.log("sync-stockcontext-ci: all news index missing — skipped");
     return 0;

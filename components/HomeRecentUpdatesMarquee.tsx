@@ -11,6 +11,7 @@ import {
   type RefObject,
 } from "react";
 
+import { fetchLatestHeadlines } from "@/lib/allNews";
 import { formatEventDateShort } from "@/lib/homeFeedDisplay";
 import { href, themeHref, tickerHref } from "@/lib/links";
 import type { RecentUpdatesMarquee, RecentUpdatesMarqueeItem } from "@/lib/types";
@@ -251,16 +252,36 @@ function newsChips(items: MarqueeNewsItem[], prefix: string, suppressClickUntil:
 
 type Props = {
   data: RecentUpdatesMarquee | null;
+  /** Full row counts when `data` rows are trimmed for the crawl. */
+  totals?: { tickers: number; themes: number };
   asOfLabel?: string;
   news?: MarqueeNewsItem[];
 };
 
 /** Marquee rows: tickers and themes with text-table updates in the last N days, then news headlines. */
-export function HomeRecentUpdatesMarquee({ data, asOfLabel, news = [] }: Props) {
+export function HomeRecentUpdatesMarquee({ data, totals, asOfLabel, news: bakedNews = [] }: Props) {
   const suppressClickUntil = useRef(0);
   const [hoverPaused, setHoverPaused] = useState(false);
   const [userPaused, setUserPaused] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
+  const [news, setNews] = useState(bakedNews);
+
+  useEffect(() => {
+    const ctrl = new AbortController();
+    const load = () =>
+      void fetchLatestHeadlines(ctrl.signal)
+        .then((items) => {
+          if (items.length) setNews(items);
+        })
+        .catch(() => {});
+    const idle = window.requestIdleCallback?.(load, { timeout: 3000 });
+    const timer = idle == null ? window.setTimeout(load, 1500) : undefined;
+    return () => {
+      ctrl.abort();
+      if (idle != null) window.cancelIdleCallback(idle);
+      if (timer != null) window.clearTimeout(timer);
+    };
+  }, []);
 
   const tickerRows = data?.ticker_rows ?? [];
   const themeRows = data?.theme_rows ?? [];
@@ -304,7 +325,8 @@ export function HomeRecentUpdatesMarquee({ data, asOfLabel, news = [] }: Props) 
           ) : null}
         </div>
         <span className={styles.meta}>
-          Last {lookback} days · {tickerRows.length} tickers · {themeRows.length} themes
+          Last {lookback} days · {totals?.tickers ?? tickerRows.length} tickers ·{" "}
+          {totals?.themes ?? themeRows.length} themes
           {asOfLabel ? ` · ${asOfLabel}` : ""}
         </span>
       </div>

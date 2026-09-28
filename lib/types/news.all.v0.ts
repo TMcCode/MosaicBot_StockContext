@@ -42,3 +42,10 @@ export type AllNewsWeekV0 = {
 };
 
 export type AllNewsStory = AllNewsItemV0 & AllNewsDetailV0;
+
+/** Newest headlines for the home crawler. */
+export type AllNewsLatestV0 = {
+  schema_version: "news.all.latest.v0";
+  as_of?: string;
+  items: { i: string; t: string; u: string }[];
+};

@@ -25,7 +25,6 @@ export default async function NewsPage() {
       {index ? (
         <NewsBrowser
           initialStories={initialStories}
-          asOf={index.as_of}
           windowDays={index.window_days}
           pageSize={FIRST_PAGE}
         />
