@@ -39,15 +39,6 @@ if (fs.existsSync(newsCatalogPath)) {
     themeNewsAsOf = "";
   }
 }
-const allNewsIndexPath = path.join(root, "public", "chart-data", "stockcontext", "news", "all", "index.v0.json");
-let allNewsAsOf = "";
-if (fs.existsSync(allNewsIndexPath)) {
-  try {
-    allNewsAsOf = JSON.parse(fs.readFileSync(allNewsIndexPath, "utf8")).as_of || "";
-  } catch {
-    allNewsAsOf = "";
-  }
-}
 fs.mkdirSync(CACHE, { recursive: true });
 fs.writeFileSync(
   DEPLOY_META,
@@ -56,7 +47,6 @@ fs.writeFileSync(
       manifestAsOf: manifest.as_of || "",
       homeFeedAsOf,
       themeNewsAsOf,
-      allNewsAsOf,
       buildId: manifest.build_id || "",
       writtenAt: new Date().toISOString(),
     },

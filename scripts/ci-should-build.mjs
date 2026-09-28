@@ -71,18 +71,6 @@ async function fetchThemeNewsAsOf() {
   }
 }
 
-/** All-news index as_of only moves when the /news feed changed; optional (never blocks). */
-async function fetchAllNewsAsOf() {
-  try {
-    return await fetchJsonAsOf(
-      "news/all/index.v0.json",
-      `${STOCKCONTEXT_PUBLIC_BASE_URL}/news/all/index.v0.json`,
-    );
-  } catch {
-    return "";
-  }
-}
-
 async function main() {
   const event = process.env.GITHUB_EVENT_NAME || "";
   const force = process.env.FORCE_BUILD === "true" || process.env.FORCE_BUILD === "1";
@@ -95,11 +83,10 @@ async function main() {
     return;
   }
 
-  const [manifestAsOf, homeFeedAsOf, themeNewsAsOf, allNewsAsOf] = await Promise.all([
+  const [manifestAsOf, homeFeedAsOf, themeNewsAsOf] = await Promise.all([
     fetchManifestAsOf(),
     fetchHomeFeedAsOf(),
     fetchThemeNewsAsOf(),
-    fetchAllNewsAsOf(),
   ]);
   const deployed = readDeployedMeta();
   if (!deployed.manifestAsOf && !deployed.homeFeedAsOf) {
@@ -127,16 +114,9 @@ async function main() {
     });
     return;
   }
-  if (allNewsAsOf && allNewsAsOf !== deployed.allNewsAsOf) {
-    writeOutputs({
-      shouldBuild: true,
-      reason: `all news as_of changed ${deployed.allNewsAsOf || "(none)"} → ${allNewsAsOf}`,
-    });
-    return;
-  }
   writeOutputs({
     shouldBuild: false,
-    reason: `publish unchanged (manifest=${manifestAsOf}, home=${homeFeedAsOf}, news=${themeNewsAsOf}, all_news=${allNewsAsOf})`,
+    reason: `publish unchanged (manifest=${manifestAsOf}, home=${homeFeedAsOf}, news=${themeNewsAsOf})`,
   });
 }
 
