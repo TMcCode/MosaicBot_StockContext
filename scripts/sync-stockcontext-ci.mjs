@@ -244,11 +244,11 @@ async function syncChartPerformanceSidecars(manifest, meta) {
 }
 
 /**
- * Bake theme-pulse sidecars into public/chart-data/stockcontext/… so the static
+ * Bake stockcontext CDN files into public/chart-data/stockcontext/… so the static
  * site can same-origin fetch them (CDN has no CORS for stockcontext.info).
  * Runs even on chart fast-path skips — files are small and etag-cached.
  */
-async function downloadStockcontextPulseFile(relative, meta, { optional = false } = {}) {
+async function downloadStockcontextFile(relative, meta, { optional = false } = {}) {
   const rel = relative.replace(/^\//, "");
   const metaKey = `chart-data/stockcontext/${rel}`;
   const url = `${STOCKCONTEXT_PUBLIC_BASE_URL}/${rel}`;
@@ -274,62 +274,13 @@ async function downloadStockcontextPulseFile(relative, meta, { optional = false 
     meta.files[metaKey] = {
       etag: normalizeEtag(res.headers.get("etag")),
       at: new Date().toISOString(),
-      source: "stockcontext-cdn-pulse",
+      source: "stockcontext-cdn",
     };
     return true;
   } catch (e) {
     if (optional) return false;
     throw e;
   }
-}
-
-async function syncThemePulseSidecars(manifest, meta) {
-  const themes = manifest.themes || [];
-  const indexJobs = [];
-  for (const entry of themes) {
-    const slug = String(entry?.slug || entry || "").trim();
-    if (!slug) continue;
-    if (entry?.meta_url && entry?.has_table_data === false) continue;
-    const enc = encodeURIComponent(slug);
-    indexJobs.push(`themes/${enc}/pulse/index.v0.json`);
-  }
-
-  let downloaded = 0;
-  let skipped = 0;
-  const dayJobs = [];
-
-  await runConcurrent(indexJobs, async (rel) => {
-    const ok = await downloadStockcontextPulseFile(rel, meta, { optional: true });
-    if (ok) downloaded += 1;
-    else skipped += 1;
-    const dest = path.join(CHART_DATA_DIR, "stockcontext", rel);
-    if (!fs.existsSync(dest)) return;
-    try {
-      const index = JSON.parse(fs.readFileSync(dest, "utf8"));
-      const slug = String(index?.slug || "").trim();
-      const dates = Array.isArray(index?.available_dates) ? index.available_dates : [];
-      if (!slug) return;
-      const enc = encodeURIComponent(slug);
-      for (const raw of dates) {
-        const day = String(raw || "").trim().slice(0, 10);
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) continue;
-        dayJobs.push(`themes/${enc}/pulse/${day}.v0.json`);
-      }
-    } catch {
-      // ignore bad index
-    }
-  });
-
-  await runConcurrent(dayJobs, async (rel) => {
-    const ok = await downloadStockcontextPulseFile(rel, meta, { optional: true });
-    if (ok) downloaded += 1;
-    else skipped += 1;
-  });
-
-  console.log(
-    `sync-stockcontext-ci: theme pulse sidecars ok (${downloaded} updated, ${skipped} unchanged/missing, indexes=${indexJobs.length}, days=${dayJobs.length})`,
-  );
-  return downloaded;
 }
 
 const THEME_NEWS_CATALOG = "news/themes_catalog.v0.json";
@@ -341,7 +292,7 @@ const THEME_NEWS_CATALOG = "news/themes_catalog.v0.json";
  */
 async function syncThemeNewsSidecars(manifest, meta) {
   const catalogPath = path.join(CHART_DATA_DIR, "stockcontext", THEME_NEWS_CATALOG);
-  await downloadStockcontextPulseFile(THEME_NEWS_CATALOG, meta, { optional: true });
+  await downloadStockcontextFile(THEME_NEWS_CATALOG, meta, { optional: true });
   if (!fs.existsSync(catalogPath)) {
     console.log("sync-stockcontext-ci: theme news catalog missing — skipped");
     return 0;
@@ -373,7 +324,7 @@ async function syncThemeNewsSidecars(manifest, meta) {
 
   let downloaded = 0;
   await runConcurrent(jobs, async ({ rel, hash }) => {
-    const ok = await downloadStockcontextPulseFile(rel, meta, { optional: true });
+    const ok = await downloadStockcontextFile(rel, meta, { optional: true });
     const entry = meta.files[`chart-data/stockcontext/${rel}`];
     if (entry && fs.existsSync(path.join(CHART_DATA_DIR, "stockcontext", rel))) entry.hash = hash;
     if (ok) downloaded += 1;
@@ -394,8 +345,8 @@ const ALL_NEWS_INDEX = "news/all/index.v0.json";
  */
 async function syncAllNews(meta) {
   const indexPath = path.join(CHART_DATA_DIR, "stockcontext", ALL_NEWS_INDEX);
-  await downloadStockcontextPulseFile(ALL_NEWS_INDEX, meta, { optional: true });
-  await downloadStockcontextPulseFile("news/all/latest.v0.json", meta, { optional: true });
+  await downloadStockcontextFile(ALL_NEWS_INDEX, meta, { optional: true });
+  await downloadStockcontextFile("news/all/latest.v0.json", meta, { optional: true });
   if (!fs.existsSync(indexPath)) {
     console.log("sync-stockcontext-ci: all news index missing — skipped");
     return 0;
@@ -421,7 +372,7 @@ async function syncAllNews(meta) {
 
   let downloaded = 0;
   await runConcurrent(jobs, async ({ rel, hash }) => {
-    const ok = await downloadStockcontextPulseFile(rel, meta, { optional: true });
+    const ok = await downloadStockcontextFile(rel, meta, { optional: true });
     const entry = meta.files[`chart-data/stockcontext/${rel}`];
     if (entry && fs.existsSync(path.join(CHART_DATA_DIR, "stockcontext", rel))) entry.hash = hash;
     if (ok) downloaded += 1;
@@ -772,9 +723,6 @@ async function main() {
   fs.mkdirSync(CHART_DATA_DIR, { recursive: true });
   await syncChartPerformanceSidecars(manifest, meta);
   saveMeta(meta);
-  // Theme pulse paused (news section replaced it on theme pages); keep for re-enable.
-  // await syncThemePulseSidecars(manifest, meta);
-  // saveMeta(meta);
   await syncThemeNewsSidecars(manifest, meta);
   saveMeta(meta);
   await syncAllNews(meta);

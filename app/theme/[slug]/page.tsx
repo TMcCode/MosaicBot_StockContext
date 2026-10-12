@@ -6,8 +6,6 @@ import { TableSection } from "@/components/TableSection";
 import { ThemeChartSection } from "@/components/ThemeChartSection";
 import { ThemeCorrMatrixPanel } from "@/components/ThemeCorrMatrixPanel";
 import { ThemeNewsPanel } from "@/components/ThemeNewsPanel";
-// Theme pulse paused (replaced by ThemeNewsPanel); keep for re-enable.
-// import { ThemePulsePanel } from "@/components/ThemePulsePanel";
 import { ThemeQuantPanel } from "@/components/ThemeQuantPanel";
 import { TierBadge } from "@/components/TierBadge";
 import {
@@ -171,7 +169,6 @@ export default async function ThemePage({ params }: Props) {
         </>
       )}
 
-      {/* <ThemePulsePanel slug={slug} themeName={meta.name} /> */}
       {newsIndex ? <ThemeNewsPanel slug={slug} themeName={meta.name} index={newsIndex} /> : null}
       <ThemeCorrMatrixPanel slug={slug} themeName={meta.name} />
 
