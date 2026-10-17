@@ -149,8 +149,20 @@ function parseStockCorrelations(raw: unknown): ThemeStockCorrelationsV0 | null {
       return { ticker, ...(weight == null ? {} : { weight }) };
     })
     .filter((item): item is { ticker: string; weight?: number } => item != null);
-  const matrix = Array.isArray(row.matrix) ? row.matrix : [];
-  if (!slug || tickers.length < 2 || matrix.length !== tickers.length) return null;
+  const matrixRaw = Array.isArray(row.matrix) ? row.matrix : [];
+  if (!slug || tickers.length < 2 || matrixRaw.length !== tickers.length) return null;
+  // Reject ragged rows (legacy publish bug stripped null cells and left-shifted values).
+  const matrix: Array<Array<number | null>> = [];
+  for (const rawRow of matrixRaw) {
+    if (!Array.isArray(rawRow) || rawRow.length !== tickers.length) return null;
+    matrix.push(
+      rawRow.map((cell) => {
+        if (cell == null) return null;
+        const n = typeof cell === "number" ? cell : Number(cell);
+        return Number.isFinite(n) ? n : null;
+      }),
+    );
+  }
   return {
     schema_version: "theme.stock_correlations.v0",
     slug,
@@ -159,7 +171,7 @@ function parseStockCorrelations(raw: unknown): ThemeStockCorrelationsV0 | null {
     window,
     max_tickers: Math.max(tickers.length, Math.round(finite(row.max_tickers) || tickers.length)),
     tickers,
-    matrix: matrix as Array<Array<number | null>>,
+    matrix,
   };
 }
 
