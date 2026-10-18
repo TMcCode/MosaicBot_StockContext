@@ -50,6 +50,7 @@ import { KeyInputsField } from "./KeyInputsField";
 import { MonitoringWatchlistField } from "./MonitoringWatchlistField";
 import { PredictionMarketWatchField } from "./PredictionMarketWatchField";
 import {
+  isKeyFactorAltColumn,
   isMonitoringWatchlistColumn,
   isPredictionMarketColumn,
 } from "@/lib/monitoringWatchlistFormat";
@@ -317,6 +318,13 @@ function MultiRowTable({ body }: { body: TableBody }) {
                       <span className={raw.includes("+") ? "pos" : raw.includes("-") ? "neg" : ""}>
                         {raw}
                       </span>
+                    </td>
+                  );
+                }
+                if (isKeyFactorAltColumn(col.id) && raw) {
+                  return (
+                    <td key={col.id} className={cellClass}>
+                      <MonitoringWatchlistField raw={r[col.id] ?? ""} />
                     </td>
                   );
                 }

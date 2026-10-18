@@ -68,7 +68,7 @@ function NewsRow({ item }: { item: ThemeNewsItemV0 }) {
         {item.picked ? (
           <span
             className={styles.pick}
-            title={item.on_site ? "TimBot pick · shown on stockthemes Radar" : "TimBot pick"}
+            title={item.on_site ? "Editorial pick · shown on stockthemes Radar" : "Editorial pick"}
           >
             Pick
           </span>
@@ -126,7 +126,7 @@ export function ThemeNewsPanel({ slug, themeName, index }: Props) {
         <h2 className={styles.heading}>News</h2>
         <p className={styles.hint}>
           {index.total} {index.total === 1 ? "story" : "stories"} tagged to this theme — Narrative
-          Radar (NewsAPI.ai) and TimBot picks.
+          Radar and editorial picks.
         </p>
       </div>
       {groups.map((g) => (

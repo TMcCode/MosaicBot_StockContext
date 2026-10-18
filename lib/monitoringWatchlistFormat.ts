@@ -216,6 +216,11 @@ export function isMonitoringWatchlistColumn(columnId: string): boolean {
   return (MONITORING_WATCHLIST_COLUMN_IDS as readonly string[]).includes(columnId);
 }
 
+/** Ticker_KeyFactors Free/Paid Alt Data — same JSON watchlist shape as monitoring columns. */
+export function isKeyFactorAltColumn(columnId: string): boolean {
+  return columnId === "Free Alt Data" || columnId === "Paid Alt Data";
+}
+
 export function isMonitoringOverviewColumn(columnId: string): boolean {
   return (
     columnId === "KeyInputsAndSourcing" ||
