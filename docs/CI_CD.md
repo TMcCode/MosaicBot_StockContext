@@ -54,10 +54,10 @@ Run once after jobs are deployed (from MosaicBot repo):
 ## Nightly order
 
 ```text
-22:00  post-transcript night → theme updates → publish (+ Pages dispatch if token set)
+22:00  post-transcript → theme updates → narrative seed → publish (+ Pages dispatch)
 02:30  GitHub Pages build (early, UTC 06:30)
-03:35  earnings notes → narrative seed (+ stockthemes manifest when seed writes)
-04:15  publish stockcontext/ JSON (morning critical path)
+03:35  earnings notes only
+04:15  publish stockcontext/ JSON (morning incremental)
 06:00  GitHub Pages build (morning primary, UTC 10:00 → 6:00 EDT / 5:00 EST)
 11:30  GitHub Pages safety net (UTC 15:30)
 12:00  post-transcript midday (weekdays) → …
