@@ -253,12 +253,28 @@ function newsChips(items: MarqueeNewsItem[], prefix: string, suppressClickUntil:
 type Props = {
   data: RecentUpdatesMarquee | null;
   /** Full row counts when `data` rows are trimmed for the crawl. */
-  totals?: { tickers: number; themes: number };
+  totals?: { tickers: number; themes: number; newThemes?: number; updatedThemes?: number };
   asOfLabel?: string;
   news?: MarqueeNewsItem[];
 };
 
-/** Marquee rows: tickers and themes with text-table updates in the last N days, then news headlines. */
+function splitThemeRows(data: RecentUpdatesMarquee | null | undefined): {
+  newThemes: RecentUpdatesMarqueeItem[];
+  updatedThemes: RecentUpdatesMarqueeItem[];
+} {
+  if (!data) return { newThemes: [], updatedThemes: [] };
+  // Only trust split fields when the publisher included them (not fabricated empties).
+  if (data.new_theme_rows != null || data.updated_theme_rows != null) {
+    return {
+      newThemes: data.new_theme_rows ?? [],
+      updatedThemes: data.updated_theme_rows ?? [],
+    };
+  }
+  // Legacy feed: single theme_rows list → treat as updates only.
+  return { newThemes: [], updatedThemes: data.theme_rows ?? [] };
+}
+
+/** Marquee rows: tickers, new themes, updated themes, then news headlines. */
 export function HomeRecentUpdatesMarquee({ data, totals, asOfLabel, news: bakedNews = [] }: Props) {
   const suppressClickUntil = useRef(0);
   const [hoverPaused, setHoverPaused] = useState(false);
@@ -284,7 +300,8 @@ export function HomeRecentUpdatesMarquee({ data, totals, asOfLabel, news: bakedN
   }, []);
 
   const tickerRows = data?.ticker_rows ?? [];
-  const themeRows = data?.theme_rows ?? [];
+  const { newThemes, updatedThemes } = splitThemeRows(data);
+  const themeTotal = newThemes.length + updatedThemes.length;
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -294,7 +311,7 @@ export function HomeRecentUpdatesMarquee({ data, totals, asOfLabel, news: bakedN
     return () => mq.removeEventListener("change", apply);
   }, []);
 
-  if (tickerRows.length === 0 && themeRows.length === 0 && news.length === 0) {
+  if (tickerRows.length === 0 && themeTotal === 0 && news.length === 0) {
     return null;
   }
 
@@ -326,7 +343,7 @@ export function HomeRecentUpdatesMarquee({ data, totals, asOfLabel, news: bakedN
         </div>
         <span className={styles.meta}>
           Last {lookback} days · {totals?.tickers ?? tickerRows.length} tickers ·{" "}
-          {totals?.themes ?? themeRows.length} themes
+          {totals?.themes ?? themeTotal} themes
           {asOfLabel ? ` · ${asOfLabel}` : ""}
         </span>
       </div>
@@ -339,9 +356,17 @@ export function HomeRecentUpdatesMarquee({ data, totals, asOfLabel, news: bakedN
         suppressClickUntil={suppressClickUntil}
       />
       <MarqueeRow
-        rowLabel="Theme tables"
-        itemCount={themeRows.length}
-        renderChips={(prefix) => updateChips(themeRows, "theme", prefix, suppressClickUntil)}
+        rowLabel="New themes"
+        itemCount={newThemes.length}
+        renderChips={(prefix) => updateChips(newThemes, "theme", prefix, suppressClickUntil)}
+        autoPaused={autoPaused}
+        reducedMotion={reducedMotion}
+        suppressClickUntil={suppressClickUntil}
+      />
+      <MarqueeRow
+        rowLabel="Updated themes"
+        itemCount={updatedThemes.length}
+        renderChips={(prefix) => updateChips(updatedThemes, "theme", prefix, suppressClickUntil)}
         autoPaused={autoPaused}
         reducedMotion={reducedMotion}
         suppressClickUntil={suppressClickUntil}

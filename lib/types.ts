@@ -145,6 +145,11 @@ export type RecentUpdatesMarquee = {
   build_id?: string;
   lookback_days: number;
   ticker_rows: RecentUpdatesMarqueeItem[];
+  /** Themes created within lookback (and with a text-table edit). */
+  new_theme_rows?: RecentUpdatesMarqueeItem[];
+  /** Older themes with a text-table edit in lookback. */
+  updated_theme_rows?: RecentUpdatesMarqueeItem[];
+  /** Combined new + updated (legacy / totals). */
   theme_rows: RecentUpdatesMarqueeItem[];
 };
 

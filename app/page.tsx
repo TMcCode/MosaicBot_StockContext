@@ -63,12 +63,27 @@ export default async function HomePage() {
             recentMarquee && {
               ...recentMarquee,
               ticker_rows: (recentMarquee.ticker_rows ?? []).slice(0, MARQUEE_ROW_MAX),
+              ...(recentMarquee.new_theme_rows != null
+                ? {
+                    new_theme_rows: recentMarquee.new_theme_rows.slice(0, MARQUEE_ROW_MAX),
+                  }
+                : {}),
+              ...(recentMarquee.updated_theme_rows != null
+                ? {
+                    updated_theme_rows: recentMarquee.updated_theme_rows.slice(
+                      0,
+                      MARQUEE_ROW_MAX,
+                    ),
+                  }
+                : {}),
               theme_rows: (recentMarquee.theme_rows ?? []).slice(0, MARQUEE_ROW_MAX),
             }
           }
           totals={{
             tickers: recentMarquee?.ticker_rows?.length ?? 0,
             themes: recentMarquee?.theme_rows?.length ?? 0,
+            newThemes: recentMarquee?.new_theme_rows?.length,
+            updatedThemes: recentMarquee?.updated_theme_rows?.length,
           }}
           asOfLabel={marqueeAsOfLabel}
           news={headlines}
