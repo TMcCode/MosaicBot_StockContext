@@ -5,16 +5,18 @@ on:
   push:
     branches: [main]
   # Four daily passes (as_of skip gate skips full builds when unchanged):
-  #   ~2:30 AM ET — after 2 AM feeds-only publish
-  #   ~7:30 AM ET — primary morning, ~1.5h after 6 AM full publish (UTC 11:30; shifts ±1h with DST)
-  #   ~1:30 PM ET Mon–Fri — after midday Process B + feeds-only publish
-  #   ~11:30 AM ET — safety net for slow overnight publish
+  #   ~2:30 AM ET — after overnight feeds / early publish (UTC 06:30; ±1h DST)
+  #   ~6:00 AM ET — primary morning, after Contabo 4:15 publish (~4:45–5:00 done)
+  #                 (UTC 10:00 → 6:00 EDT / 5:00 EST)
+  #   ~11:30 AM ET — safety net if morning publish ran late (UTC 15:30)
+  #   ~1:30 PM ET Mon–Fri — after midday Process B + feeds-only publish (UTC 17:30)
+  # Contabo also tries workflow_dispatch right after publish; schedule is the reliable bake.
   # /news and the home headline crawler read the news feed live from the CDN — no news-only passes.
   schedule:
     - cron: "30 6 * * *"
-    - cron: "30 11 * * *"
-    - cron: "30 17 * * 1-5"
+    - cron: "0 10 * * *"
     - cron: "30 15 * * *"
+    - cron: "30 17 * * 1-5"
   workflow_dispatch:
     inputs:
       force_build:
