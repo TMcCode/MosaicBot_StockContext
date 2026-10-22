@@ -534,6 +534,7 @@ a:hover {
   background: rgba(38, 252, 214, 0.08);
 }
 
+.badge-workflow-post,
 .badge-workflow-notes {
   border-color: rgba(251, 191, 36, 0.35);
   color: #fbbf24;
@@ -560,6 +561,7 @@ a:hover {
   background: rgba(42, 207, 200, 0.12);
 }
 
+.st-theme[data-theme="light"] .st-surface .badge-workflow-post,
 .st-theme[data-theme="light"] .st-surface .badge-workflow-notes {
   color: #b45309;
   background: rgba(251, 191, 36, 0.12);
