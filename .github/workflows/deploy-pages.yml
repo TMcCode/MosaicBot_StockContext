@@ -6,8 +6,8 @@ on:
     branches: [main]
   # Four daily passes (as_of skip gate skips full builds when unchanged):
   #   ~2:30 AM ET — after night 22:00 publish (UTC 06:30; ±1h DST)
-  #   ~4:30 AM ET — primary morning, after Contabo 3:45 publish (~4:15–4:20 done)
-  #                 (UTC 08:30 → 4:30 EDT / 3:30 EST; 11:30 pass covers slow mornings)
+  #   ~4:30 AM ET — primary morning safety net after Contabo 3:35 notes→feeds-only→Pages
+  #                 (UTC 08:30 → 4:30 EDT / 3:30 EST; Contabo also dispatches after feeds)
   #   ~11:30 AM ET — safety net if morning publish ran late (UTC 15:30)
   #   ~1:30 PM ET Mon–Fri — after midday Process B + feeds-only publish (UTC 17:30)
   # Contabo also tries workflow_dispatch right after publish; schedule is the reliable bake.
