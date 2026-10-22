@@ -649,8 +649,42 @@ async function main() {
   const remoteSync = credentialsReady && !fastPath;
   if (fastPath) {
     console.log(
-      `sync-stockcontext-ci: code-only fast path (reuse Actions cache, concurrency=${syncConcurrency()})`,
+      `sync-stockcontext-ci: code-only fast path — refresh manifest/feeds then walk new tickers (concurrency=${syncConcurrency()})`,
     );
+    // Push deploys used to reuse a frozen cache, so marquee chips (from CDN-shaped
+    // feeds) could link to /ticker/X while generateStaticParams still used an old
+    // manifest without X → GitHub Pages 404. Always refresh the small bootstrap
+    // files and pull any newly referenced ticker/theme bundles.
+    const bootstrapKeys = [
+      "manifest.v0.json",
+      "search_index.v0.json",
+      "feeds/home.v0.json",
+      "feeds/recent_updates_marquee.v0.json",
+      "feeds/workflow_tags.v0.json",
+      "themes/index.v0.json",
+    ];
+    if (credentialsReady) {
+      downloaded += await downloadMany(bootstrapKeys, meta, { label: "fast-path bootstrap" });
+      const manifestPath = path.join(CACHE, "manifest.v0.json");
+      const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+      const urls = collectUrls(manifest);
+      const homePath = path.join(CACHE, "feeds/home.v0.json");
+      if (fs.existsSync(homePath)) {
+        const home = JSON.parse(fs.readFileSync(homePath, "utf8"));
+        for (const section of home.sections || []) {
+          if (section?.id) {
+            urls.add(`feeds/sections/${section.id}.v0.json`);
+          }
+        }
+      }
+      const marqueePath = path.join(CACHE, "feeds/recent_updates_marquee.v0.json");
+      if (fs.existsSync(marqueePath)) {
+        collectUrls(JSON.parse(fs.readFileSync(marqueePath, "utf8")), urls);
+      }
+      downloaded += await downloadMany([...urls], meta, { label: "fast-path manifest walk" });
+      downloaded += await syncTickerBundles(meta);
+      console.log(`sync-stockcontext-ci: fast-path refresh done (${downloaded} files updated)`);
+    }
   } else if (cdnSyncEnabled()) {
     console.log(
       `sync-stockcontext-ci: using public CDN (STOCKCONTEXT_SYNC_VIA_CDN=1, concurrency=${syncConcurrency()})`,
