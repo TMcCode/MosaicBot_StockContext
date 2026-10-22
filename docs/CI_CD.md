@@ -43,22 +43,21 @@ Run once after jobs are deployed (from MosaicBot repo):
 | **00:10** | `stockcontext-post-transcript-night` | Night transcripts (Process B) |
 | **03:00** | `stockcontext-earnings-notes` | Ticker_Notes (Process C) |
 | **05:00** | `stockcontext-theme-updates` | Theme T1/T2 |
-| **02:00** | `stockcontext-publish-early` | `--feeds-only --upload` (home/marquee + recent ticker/theme sync) |
-| **06:00** | `stockcontext-publish-am` | Full incremental publish after notes + themes |
+| **~after 22:00 chain** | `stockcontext-publish-job` (feeds-only) | Home/marquee after night seed |
+| **~after 03:35** | `stockcontext-publish-job` (full) | Full incremental after notes (`run-notes-then-publish.sh`) |
 | **12:00** Mon–Fri | `stockcontext-post-transcript-midday` | Midday transcripts |
 
-**Website:** `deploy-pages.yml` runs on schedule ~**2:30 AM**, ~**4:30 AM** (primary, after Contabo 3:45 publish), ~**11:30 AM**, and ~**1:30 PM ET** weekdays (`as_of` skip gate avoids full rebuilds when unchanged). Push to `main` always rebuilds.
+**Website:** `deploy-pages.yml` runs on schedule ~**2:30 AM**, ~**4:30 AM** (primary, after Contabo morning notes→publish), ~**11:30 AM**, and ~**1:30 PM ET** weekdays (`as_of` skip gate avoids full rebuilds when unchanged). Contabo also dispatches Pages after each successful publish. Push to `main` always rebuilds.
 
 **Alerts (MosaicBot):** `NOTIFY_EMAIL=… ./scripts/setup_stockcontext_publish_alerts.sh` — email on failed execution, run >2h, or no success in 10h.
 
 ## Nightly order
 
 ```text
-22:00  post-transcript → theme updates → narrative seed → publish (+ Pages dispatch)
+22:00  post-transcript → theme updates → narrative seed → feeds-only publish (+ Pages)
 02:30  GitHub Pages build (early, UTC 06:30)
-03:35  earnings notes only
-03:45  publish stockcontext/ JSON (morning incremental; ~4:15–4:20 done)
-04:30  GitHub Pages build (morning primary, UTC 08:30 → 4:30 EDT / 3:30 EST)
+03:35  earnings notes → full publish → Pages dispatch
+04:30  GitHub Pages build (morning primary / backup, UTC 08:30 → 4:30 EDT / 3:30 EST)
 11:30  GitHub Pages safety net (UTC 15:30)
 12:00  post-transcript midday (weekdays) → …
 13:30  GitHub Pages midday (weekdays, UTC 17:30)
