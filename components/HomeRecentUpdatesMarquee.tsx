@@ -107,13 +107,14 @@ function MarqueeRow({
     if (e.button !== 0) return;
     const el = viewportRef.current;
     if (!el) return;
+    // Do not setPointerCapture here — Chrome then delivers click to the viewport
+    // instead of the chip <a>/<Link>. Capture only after the drag threshold.
     dragRef.current = {
       pointerId: e.pointerId,
       startX: e.clientX,
       startScroll: el.scrollLeft,
       moved: false,
     };
-    el.setPointerCapture(e.pointerId);
   }, []);
 
   const onPointerMove = useCallback((e: ReactPointerEvent<HTMLDivElement>) => {
@@ -124,6 +125,11 @@ function MarqueeRow({
     if (!drag.moved && Math.abs(dx) > DRAG_THRESHOLD_PX) {
       drag.moved = true;
       setScrubbing(true);
+      try {
+        el.setPointerCapture(e.pointerId);
+      } catch {
+        /* capture can fail if pointer already up */
+      }
     }
     if (drag.moved) {
       el.scrollLeft = drag.startScroll - dx;
@@ -137,14 +143,16 @@ function MarqueeRow({
     if (!el || drag.pointerId !== e.pointerId) return;
     if (drag.moved) {
       suppressClickUntil.current = Date.now() + CLICK_SUPPRESS_MS;
+      try {
+        if (el.hasPointerCapture(e.pointerId)) {
+          el.releasePointerCapture(e.pointerId);
+        }
+      } catch {
+        /* already released */
+      }
     }
     dragRef.current = { pointerId: -1, startX: 0, startScroll: 0, moved: false };
     setScrubbing(false);
-    try {
-      el.releasePointerCapture(e.pointerId);
-    } catch {
-      /* already released */
-    }
   }, [suppressClickUntil]);
 
   if (itemCount === 0) return null;
