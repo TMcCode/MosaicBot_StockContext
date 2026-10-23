@@ -496,6 +496,11 @@ a:hover {
   color: var(--text-muted, var(--muted));
 }
 
+.badge-etf-membership {
+  color: var(--text-muted, var(--muted));
+  font-weight: 500;
+}
+
 .badge-coverage-portfolio {
   margin-left: 0.35rem;
   vertical-align: middle;

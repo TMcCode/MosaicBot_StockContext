@@ -49,6 +49,11 @@ export type TickerMeta = {
   portfolio_weight?: number | null;
   primary_theme?: string | null;
   themes?: string[];
+  /**
+   * Mid-label ETF / index membership chips from Fetch1 (publish-time).
+   * Order: indexes → sector SPDRs/SMH → factor/geo. No live fetch on the site.
+   */
+  etf_membership?: string[];
   /** YYYY-MM-DD from upcoming_earnings snapshot (publish-time). */
   next_earnings_date?: string | null;
   last_earnings_date?: string | null;

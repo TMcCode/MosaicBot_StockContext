@@ -39,6 +39,9 @@ export function TickerHeader({ symbol, meta, manifest }: Props) {
     meta.portfolio_weight != null && meta.portfolio_weight > 0
       ? `${(meta.portfolio_weight * 100).toFixed(1)}% portfolio`
       : null;
+  const etfMembership = (meta.etf_membership || [])
+    .map((label) => String(label || "").trim())
+    .filter(Boolean);
   const logoUrl = resolveTickerLogoUrl(meta.logo_url);
   const nextEarnings = String(meta.next_earnings_date || "").trim();
   const earningsTiming =
@@ -66,6 +69,11 @@ export function TickerHeader({ symbol, meta, manifest }: Props) {
           <TierBadge tier={meta.tier} />
           <WorkflowTagBadges tags={meta.workflow_tags} />
           {weight ? <span className="badge badge-weight">{weight}</span> : null}
+          {etfMembership.map((label) => (
+            <span key={label} className="badge badge-etf-membership">
+              {label}
+            </span>
+          ))}
         </div>
         {meta.company_name && meta.company_name !== symbol ? (
           <p className="ticker-subtitle">{meta.company_name}</p>
