@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { themeHref } from "@/lib/links";
 import {
@@ -33,6 +33,57 @@ function matrixDensity(tickerCount: number): "comfortable" | "compact" | "dense"
   return "comfortable";
 }
 
+const MATRIX_FIT_MQ = "(max-width: 560px)";
+
+/** Phone: scale matrix to fit width. */
+function useMatrixPhoneFit(layoutKey: string | number) {
+  const shellRef = useRef<HTMLDivElement>(null);
+  const scaleRef = useRef<HTMLDivElement>(null);
+  const [narrow, setNarrow] = useState(false);
+  const [scale, setScale] = useState(1);
+
+  useEffect(() => {
+    const mq = window.matchMedia(MATRIX_FIT_MQ);
+    const sync = () => setNarrow(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+
+  useLayoutEffect(() => {
+    const shell = shellRef.current;
+    const inner = scaleRef.current;
+    if (!shell || !inner) return;
+
+    const measure = () => {
+      if (!narrow) {
+        setScale(1);
+        shell.style.height = "";
+        return;
+      }
+      const avail = shell.clientWidth;
+      const need = inner.scrollWidth;
+      const next = avail > 0 && need > avail ? avail / need : 1;
+      setScale(next);
+      shell.style.height = next < 1 ? `${inner.offsetHeight * next}px` : "";
+    };
+
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(shell);
+    ro.observe(inner);
+    return () => ro.disconnect();
+  }, [narrow, layoutKey]);
+
+  return {
+    shellRef,
+    scaleRef,
+    narrow,
+    scale,
+    fitted: narrow,
+  };
+}
+
 function cellColor(value: number | null): string | undefined {
   if (value == null || !Number.isFinite(value)) return undefined;
   const intensity = Math.min(Math.abs(value), 1);
@@ -47,6 +98,58 @@ function formatCorr(value: number): string {
 function formatDecimal(value: number | undefined | null, digits = 2): string {
   if (value == null || !Number.isFinite(value)) return "—";
   return value.toFixed(digits);
+}
+
+function ConstituentCorrTable({
+  tickers,
+  matrix,
+  className,
+}: {
+  tickers: string[];
+  matrix: Array<Array<number | null>>;
+  className: string;
+}) {
+  return (
+    <table className={className} data-density={matrixDensity(tickers.length)}>
+      <thead>
+        <tr>
+          <th scope="col" />
+          {tickers.map((ticker) => (
+            <th key={ticker} scope="col" title={ticker}>
+              {ticker}
+            </th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {tickers.map((rowTicker, i) => (
+          <tr key={rowTicker}>
+            <th scope="row" title={rowTicker}>
+              {rowTicker}
+            </th>
+            {tickers.map((colTicker, j) => {
+              const raw = matrix[i]?.[j];
+              const value =
+                typeof raw === "number" && Number.isFinite(raw) ? raw : null;
+              const tip =
+                value == null
+                  ? `${rowTicker} · ${colTicker}: n/a`
+                  : `${rowTicker} · ${colTicker}: ${formatCorr(value)}`;
+              return (
+                <td
+                  key={`${rowTicker}-${colTicker}`}
+                  style={{ background: cellColor(value) }}
+                  title={tip}
+                >
+                  {value == null ? "—" : formatCorr(value)}
+                </td>
+              );
+            })}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
 }
 
 function percent(value: number | undefined | null, digits = 0): string {
@@ -69,6 +172,22 @@ function percentileLabel(value: number | undefined): string {
             ? "rd"
             : "th";
   return `${rounded}${suffix} percentile`;
+}
+
+/** One-line cohesion footer: "72nd pct · #3/12". */
+function cohesionFootnote(
+  percentile: number | undefined,
+  groupRank: number | undefined,
+  groupCount: number | undefined,
+): string | null {
+  const parts: string[] = [];
+  if (percentile != null && Number.isFinite(percentile)) {
+    parts.push(`${Math.round(percentile)}th pct`);
+  }
+  if (groupRank != null && groupCount != null) {
+    parts.push(`#${groupRank}/${groupCount}`);
+  }
+  return parts.length ? parts.join(" · ") : null;
 }
 
 function buildPairs(
@@ -99,12 +218,15 @@ function compactThemeParts(theme: string): { group?: string; primary: string } {
 
 function NeighborList({
   title,
+  mobileTitle,
   titleHint,
   rows,
   empty,
   showGroup,
 }: {
   title: string;
+  /** Shorter label on phone (≤560) when the full title truncates. */
+  mobileTitle?: string;
   titleHint?: string;
   rows: ThemeNeighborRowV0[];
   empty: string;
@@ -113,7 +235,14 @@ function NeighborList({
   return (
     <div className={styles.neighborCard}>
       <h3 className={styles.colTitle} title={titleHint ? `${title}. ${titleHint}` : title}>
-        {title}
+        {mobileTitle ? (
+          <>
+            <span className={styles.titleDesktop}>{title}</span>
+            <span className={styles.titleMobile}>{mobileTitle}</span>
+          </>
+        ) : (
+          title
+        )}
       </h3>
       {rows.length === 0 ? (
         <p className={styles.hint} style={{ marginTop: 0 }}>
@@ -206,8 +335,10 @@ export function ThemeCorrMatrixPanel({ slug, themeName }: Props) {
 
   const cohesion = attribution?.cohesion?.[COHESION_HORIZON] ?? null;
   const asOf = attribution?.as_of || payload?.as_of || neighbors?.as_of;
-  const sampleSize = attribution?.sample_size_1y;
+  /** Cohesion / matrix window — not attribution sample_size (can be thin for late themes). */
+  const windowLabel = payload?.window?.trim() || COHESION_HORIZON;
   const tickers = useMemo(() => payload?.tickers.map((t) => t.ticker) ?? [], [payload]);
+  const matrixFit = useMatrixPhoneFit(tickers.length);
 
   const { topPairs, bottomPairs } = useMemo(() => {
     if (!payload || tickers.length < 2) {
@@ -238,6 +369,21 @@ export function ThemeCorrMatrixPanel({ slug, themeName }: Props) {
     return <div ref={hostRef} />;
   }
 
+  const medianFoot = cohesion
+    ? cohesionFootnote(
+        cohesion.global_percentile,
+        cohesion.group_rank,
+        cohesion.group_theme_count,
+      )
+    : null;
+  const mktAdjFoot = cohesion
+    ? cohesionFootnote(
+        cohesion.market_adjusted_global_percentile,
+        cohesion.market_adjusted_group_rank,
+        cohesion.market_adjusted_group_theme_count,
+      )
+    : null;
+
   return (
     <div ref={hostRef}>
       <section className={`card ${styles.panel}`} aria-label={`${themeName} correlation`}>
@@ -246,13 +392,10 @@ export function ThemeCorrMatrixPanel({ slug, themeName }: Props) {
             <div className={styles.eyebrow}>Correlation & cohesion</div>
             {asOf ? (
               <div className={styles.asOf}>
-                Through {asOf}
-                {sampleSize != null && Number.isFinite(sampleSize)
-                  ? ` · ${sampleSize} trading sessions`
-                  : " · 1Y"}
+                Through {asOf} · {windowLabel}
               </div>
             ) : (
-              <div className={styles.asOf}>1Y</div>
+              <div className={styles.asOf}>{windowLabel}</div>
             )}
           </div>
         </div>
@@ -262,44 +405,43 @@ export function ThemeCorrMatrixPanel({ slug, themeName }: Props) {
             <div className={styles.cohesionGrid}>
               <div
                 className={styles.metricCard}
-                title="Median correlation between each ticker and the weighted theme return after excluding that ticker from its comparator."
+                title={`Median correlation between each ticker and the weighted theme return after excluding that ticker from its comparator.${
+                  cohesion.global_percentile != null
+                    ? ` ${percentileLabel(cohesion.global_percentile)} across all themes.`
+                    : ""
+                }${
+                  cohesion.group_rank != null && cohesion.group_theme_count != null
+                    ? ` #${cohesion.group_rank} of ${cohesion.group_theme_count} within its group.`
+                    : ""
+                }`}
               >
-                <span className={styles.metricLabel}>Median correlation</span>
+                <span className={styles.metricLabel}>Median corr</span>
                 <span className={styles.metricValue}>
                   {formatDecimal(cohesion.median_correlation)}
                 </span>
-                {cohesion.global_percentile != null ? (
-                  <span className={styles.metricContext}>
-                    {percentileLabel(cohesion.global_percentile)} across all themes
-                    {cohesion.group_rank != null && cohesion.group_theme_count != null ? (
-                      <>
-                        <br />#{cohesion.group_rank} of {cohesion.group_theme_count} within its
-                        group
-                      </>
-                    ) : null}
-                  </span>
+                {medianFoot ? (
+                  <span className={styles.metricContext}>{medianFoot}</span>
                 ) : null}
               </div>
               <div
                 className={styles.metricCard}
-                title="Median leave-one-out correlation after residualizing against the broad market."
+                title={`Median leave-one-out correlation after residualizing against the broad market.${
+                  cohesion.market_adjusted_global_percentile != null
+                    ? ` ${percentileLabel(cohesion.market_adjusted_global_percentile)} across all themes.`
+                    : ""
+                }${
+                  cohesion.market_adjusted_group_rank != null &&
+                  cohesion.market_adjusted_group_theme_count != null
+                    ? ` #${cohesion.market_adjusted_group_rank} of ${cohesion.market_adjusted_group_theme_count} within its group.`
+                    : ""
+                }`}
               >
-                <span className={styles.metricLabel}>Market-adjusted</span>
+                <span className={styles.metricLabel}>Mkt-adj</span>
                 <span className={styles.metricValue}>
                   {formatDecimal(cohesion.market_adjusted_median_correlation)}
                 </span>
-                {cohesion.market_adjusted_global_percentile != null ? (
-                  <span className={styles.metricContext}>
-                    {percentileLabel(cohesion.market_adjusted_global_percentile)} across all
-                    themes
-                    {cohesion.market_adjusted_group_rank != null &&
-                    cohesion.market_adjusted_group_theme_count != null ? (
-                      <>
-                        <br />#{cohesion.market_adjusted_group_rank} of{" "}
-                        {cohesion.market_adjusted_group_theme_count} within its group
-                      </>
-                    ) : null}
-                  </span>
+                {mktAdjFoot ? (
+                  <span className={styles.metricContext}>{mktAdjFoot}</span>
                 ) : null}
               </div>
               <div
@@ -320,7 +462,7 @@ export function ThemeCorrMatrixPanel({ slug, themeName }: Props) {
                 className={styles.metricCard}
                 title="Average share of the 1Y window with overlapping valid returns. Data-confidence measure, not a quality score."
               >
-                <span className={styles.metricLabel}>Fit coverage</span>
+                <span className={styles.metricLabel}>Coverage</span>
                 <span className={styles.metricValue}>{percent(cohesion.coverage_pct)}</span>
               </div>
             </div>
@@ -335,6 +477,7 @@ export function ThemeCorrMatrixPanel({ slug, themeName }: Props) {
                 title={
                   neighbors.group ? `Closest in ${neighbors.group}` : "Closest in group"
                 }
+                mobileTitle="Closest in group"
                 titleHint="Highest 1Y theme-return correlations with other themes in the same group."
                 rows={neighbors.closest_in_group}
                 empty="None"
@@ -343,6 +486,7 @@ export function ThemeCorrMatrixPanel({ slug, themeName }: Props) {
                 title={
                   neighbors.group ? `Furthest in ${neighbors.group}` : "Furthest in group"
                 }
+                mobileTitle="Furthest in group"
                 titleHint="Lowest 1Y theme-return correlations with other themes in the same group."
                 rows={neighbors.furthest_in_group}
                 empty="None"
@@ -372,55 +516,32 @@ export function ThemeCorrMatrixPanel({ slug, themeName }: Props) {
                 className={styles.colTitle}
                 title="Pairwise daily-return correlations among top holdings by theme weight."
               >
-                Constituent correlation matrix
+                Constituent matrix
               </summary>
               <div
                 className={styles.corrLayout}
                 data-density={matrixDensity(tickers.length)}
               >
-              <div className={styles.matrixScroll}>
-                <table
-                  className={styles.matrix}
-                  data-density={matrixDensity(tickers.length)}
+              <div className={styles.matrixScrollBlock}>
+                <div
+                  ref={matrixFit.shellRef}
+                  className={styles.matrixScroll}
+                  data-mode={matrixFit.fitted ? "fit" : "desktop"}
                 >
-                  <thead>
-                    <tr>
-                      <th scope="col" />
-                      {tickers.map((ticker) => (
-                        <th key={ticker} scope="col" title={ticker}>
-                          {ticker}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {tickers.map((rowTicker, i) => (
-                      <tr key={rowTicker}>
-                        <th scope="row" title={rowTicker}>
-                          {rowTicker}
-                        </th>
-                        {tickers.map((colTicker, j) => {
-                          const raw = payload.matrix[i]?.[j];
-                          const value =
-                            typeof raw === "number" && Number.isFinite(raw) ? raw : null;
-                          const tip =
-                            value == null
-                              ? `${rowTicker} · ${colTicker}: n/a`
-                              : `${rowTicker} · ${colTicker}: ${formatCorr(value)}`;
-                          return (
-                            <td
-                              key={`${rowTicker}-${colTicker}`}
-                              style={{ background: cellColor(value) }}
-                              title={tip}
-                            >
-                              {value == null ? "—" : formatCorr(value)}
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                  <div
+                    ref={matrixFit.scaleRef}
+                    className={styles.matrixScale}
+                    style={{
+                      transform: matrixFit.fitted ? `scale(${matrixFit.scale})` : undefined,
+                    }}
+                  >
+                    <ConstituentCorrTable
+                      tickers={tickers}
+                      matrix={payload.matrix}
+                      className={styles.matrix}
+                    />
+                  </div>
+                </div>
               </div>
               <aside className={styles.corrSide}>
                 <div className={styles.pairGrid}>

@@ -119,17 +119,65 @@
   margin-top: auto;
   padding-top: 0.3rem;
   font-size: 0.68rem;
-  line-height: 1.35;
+  line-height: 1.25;
   color: var(--text-muted, #7a8886);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 @media (max-width: 900px) {
+  /*
+   * Phone/tablet: flat label|value rows, not tall desktop cards.
+   * Value sits on the right so each cell is ~2 lines tall.
+   */
   .cohesionGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.2rem 0.35rem;
+    align-items: start;
   }
 
   .cohesionGrid > .metricCard:last-child {
-    grid-column: span 2;
+    grid-column: auto;
+  }
+
+  .metricCard {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "label value"
+      "ctx value";
+    column-gap: 0.35rem;
+    row-gap: 0;
+    align-items: center;
+    padding: 0.22rem 0.45rem;
+    border-radius: 5px;
+    min-height: 0;
+    gap: unset;
+  }
+
+  .metricLabel {
+    grid-area: label;
+    font-size: 0.5rem;
+    letter-spacing: 0.03em;
+    line-height: 1.15;
+  }
+
+  .metricValue {
+    grid-area: value;
+    margin-top: 0;
+    font-size: 0.75rem;
+    line-height: 1.1;
+    justify-self: end;
+    align-self: center;
+  }
+
+  .metricContext {
+    grid-area: ctx;
+    margin-top: 0;
+    padding-top: 0;
+    font-size: 0.48rem;
+    line-height: 1.15;
   }
 }
 
@@ -228,7 +276,8 @@
 
 .num {
   font-variant-numeric: tabular-nums;
-  color: var(--text-primary, #e8eaed);
+  color: var(--text-primary, var(--foreground, #1a2422));
+  flex: 0 0 auto;
 }
 
 .muted {
@@ -247,25 +296,44 @@
   color: var(--text-muted, #7a8886);
 }
 
+.matrixScrollBlock {
+  display: grid;
+  gap: 0.35rem;
+  width: 100%;
+  min-width: 0;
+}
+
 .matrixScroll {
-  /* Full published grid; scroll horizontally if needed. Cell size via data-density. */
+  /* Table stays max-content; this shell clips and scrolls horizontally. */
   overflow-x: auto;
   overflow-y: visible;
-  overscroll-behavior: contain;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
   border: 1px solid var(--border, rgba(38, 252, 214, 0.12));
   border-radius: 8px;
-  width: max-content;
+  width: 100%;
   min-width: 0;
   max-width: 100%;
 }
 
+.matrixScroll[data-mode="fit"] {
+  overflow: hidden;
+}
+
+.matrixScale {
+  width: max-content;
+  max-width: none;
+  transform-origin: top left;
+}
+
 .corrLayout {
   display: grid;
-  grid-template-columns: minmax(0, max-content);
-  width: max-content;
+  grid-template-columns: minmax(0, 1fr);
+  width: 100%;
   max-width: 100%;
   gap: 0.45rem;
   align-items: start;
+  min-width: 0;
 }
 
 .neighborGrid {
@@ -277,6 +345,11 @@
 
 .matrixSection {
   margin-top: 0.35rem;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  /* Don't clip pair corr values; matrix scrolls inside .matrixScroll. */
+  overflow: visible;
 }
 
 .matrixDetails {
@@ -286,6 +359,9 @@
   border: none;
   padding: 0;
   background: transparent;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .matrixDetails > summary {
@@ -318,6 +394,10 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.titleMobile {
+  display: none;
 }
 
 .neighborCard .tickerLink {
@@ -408,7 +488,7 @@
 
 .pairGrid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.25rem 0.75rem;
   width: 100%;
 }
@@ -434,13 +514,14 @@
 .pairList li {
   display: flex;
   align-items: baseline;
-  justify-content: space-between;
-  gap: 0.5rem;
+  justify-content: flex-start;
+  gap: 0.35rem;
   padding: 1px 0;
   font-size: 0.65rem;
   line-height: 1.3;
   border-bottom: none;
   color: var(--text-secondary, #9aa8a6);
+  white-space: nowrap;
 }
 
 .pairList li:last-child {
@@ -455,17 +536,126 @@
 
 @media (max-width: 900px) {
   .corrLayout {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .pairGrid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 560px) {
+  /* Scrunch vertical length on phone. */
+  .panel {
+    margin-bottom: 0.65rem;
+    padding: 0.55rem 0.7rem 0.65rem;
+  }
+
+  .header {
+    margin-bottom: 0.35rem;
+    gap: 0.3rem 0.6rem;
+  }
+
+  .asOf {
+    margin-top: 0.1rem;
+    font-size: 0.55rem;
+  }
+
+  .cohesionGrid {
+    margin-bottom: 0.35rem;
+  }
+
+  .corrLayout {
+    gap: 0.3rem;
+  }
+
+  .matrixSection {
+    margin-top: 0.2rem;
+  }
+
+  .matrixDetails {
+    gap: 0.25rem;
+  }
+
+  /* 2×2: in-group on row 1, across/outside on row 2. */
   .neighborGrid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-flow: row;
+    grid-auto-columns: unset;
+    gap: 0.3rem;
+    overflow-x: visible;
+    scroll-snap-type: none;
+  }
+
+  .neighborCard {
+    padding: 0.3rem 0.4rem;
+    gap: 0.1rem;
+    border-radius: 6px;
+  }
+
+  .neighborList li {
+    padding: 0.08rem 0;
+    gap: 0.25rem;
+    font-size: 0.65rem;
+  }
+
+  .neighborCard .tickerLink {
+    font-size: 0.65rem;
+    line-height: 1.2;
+  }
+
+  .neighborList .num {
+    font-size: 0.62rem;
+  }
+
+  .neighborGroup {
+    font-size: 0.55rem;
+  }
+
+  .colTitle,
+  .eyebrow {
+    font-size: 0.62rem;
+    letter-spacing: 0.04em;
+  }
+
+  .titleDesktop {
+    display: none;
+  }
+
+  .titleMobile {
+    display: inline;
+  }
+
+  /* Pairs: side-by-side under matrix — ticker + value stay compact. */
+  .pairGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.12rem 0.45rem;
+  }
+
+  .pairList li {
+    font-size: 0.58rem;
+    line-height: 1.2;
+    padding: 0;
+  }
+
+  .matrix th,
+  .matrix td {
+    padding: 0.06rem 0.1rem;
+    min-width: 1.25rem;
+    font-size: 0.52rem;
+  }
+
+  .matrix[data-density="compact"] th,
+  .matrix[data-density="compact"] td,
+  .matrix[data-density="dense"] th,
+  .matrix[data-density="dense"] td {
+    padding: 0.04rem 0.06rem;
+    min-width: 1.1rem;
+    font-size: 0.48rem;
+  }
+
+  .matrixScrollBlock {
+    gap: 0.2rem;
   }
 }
 
