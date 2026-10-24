@@ -37,6 +37,9 @@ export type ThemeCohesionHorizonV0 = {
   group_rank?: number;
   group_theme_count?: number;
   group_percentile?: number;
+  market_adjusted_group_rank?: number;
+  market_adjusted_group_theme_count?: number;
+  market_adjusted_group_percentile?: number;
   constituents: ThemeConstituentFitV0[];
 };
 
@@ -46,5 +49,7 @@ export type ThemeFactorAttributionV0 = {
   as_of?: string;
   methodology_version?: string;
   history_method?: string;
+  /** From horizons.1Y.sample_size when present — used for Correlation header. */
+  sample_size_1y?: number;
   cohesion: Partial<Record<ThemeFactorAttributionHorizon, ThemeCohesionHorizonV0>>;
 };

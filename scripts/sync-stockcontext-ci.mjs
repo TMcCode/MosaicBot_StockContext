@@ -226,6 +226,7 @@ async function syncChartPerformanceSidecars(manifest, meta) {
       jobs.push({ rel: `themes/${enc}.factor_profile.v0.json`, optional: true });
       jobs.push({ rel: `themes/${enc}.factor_attribution.v0.json`, optional: true });
       jobs.push({ rel: `themes/${enc}.stock_correlations.v0.json`, optional: true });
+      jobs.push({ rel: `themes/${enc}.theme_neighbors.v0.json`, optional: true });
     }
   }
 

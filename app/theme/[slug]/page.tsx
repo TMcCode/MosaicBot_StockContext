@@ -131,11 +131,7 @@ export default async function ThemePage({ params }: Props) {
         constituents={meta.constituents}
         selectedDates={chartSelectedDates}
       />
-      <ThemeQuantPanel
-        slug={slug}
-        themeName={meta.name}
-        constituents={meta.constituents}
-      />
+      <ThemeQuantPanel slug={slug} themeName={meta.name} />
 
       <PageReadControl pageType="theme" pageKey={slug} buildId={buildId} />
 

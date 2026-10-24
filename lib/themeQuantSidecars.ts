@@ -7,10 +7,15 @@ import type {
   ThemeFactorAttributionV0,
 } from "@/lib/types/theme.factor_attribution.v0";
 import type { ThemeStockCorrelationsV0 } from "@/lib/types/theme.stock_correlations.v0";
+import type {
+  ThemeNeighborRowV0,
+  ThemeThemeNeighborsV0,
+} from "@/lib/types/theme.theme_neighbors.v0";
 
 export const FACTOR_PROFILE_SIDECAR_SUFFIX = ".factor_profile.v0.json";
 export const FACTOR_ATTRIBUTION_SIDECAR_SUFFIX = ".factor_attribution.v0.json";
 export const STOCK_CORRELATIONS_SIDECAR_SUFFIX = ".stock_correlations.v0.json";
+export const THEME_NEIGHBORS_SIDECAR_SUFFIX = ".theme_neighbors.v0.json";
 
 export const FACTOR_ATTRIBUTION_HORIZON_ORDER: ThemeFactorAttributionHorizon[] = [
   "1M",
@@ -105,6 +110,9 @@ function cohesionHorizon(value: unknown): ThemeCohesionHorizonV0 | null {
     group_rank: finite(row.group_rank),
     group_theme_count: finite(row.group_theme_count),
     group_percentile: finite(row.group_percentile),
+    market_adjusted_group_rank: finite(row.market_adjusted_group_rank),
+    market_adjusted_group_theme_count: finite(row.market_adjusted_group_theme_count),
+    market_adjusted_group_percentile: finite(row.market_adjusted_group_percentile),
     constituents,
   };
 }
@@ -120,12 +128,17 @@ function parseAttribution(raw: unknown): ThemeFactorAttributionV0 | null {
     const block = cohesionHorizon(cohesionRaw[horizon]);
     if (block) cohesion[horizon] = block;
   }
+  const horizon1y = record(record(row.horizons)["1Y"]);
+  const sampleSize1y = finite(horizon1y.sample_size);
   return {
     schema_version: "theme.factor_attribution.v0",
     slug,
     as_of: text(row.as_of) || undefined,
     methodology_version: text(row.methodology_version) || undefined,
     history_method: text(row.history_method) || undefined,
+    ...(sampleSize1y == null
+      ? {}
+      : { sample_size_1y: Math.max(0, Math.round(sampleSize1y)) }),
     cohesion,
   };
 }
@@ -206,6 +219,94 @@ export async function fetchThemeStockCorrelations(
     signal,
   );
   return parseStockCorrelations(raw);
+}
+
+function neighborRow(value: unknown): ThemeNeighborRowV0 | null {
+  const row = record(value);
+  const slug = text(row.slug);
+  const theme = text(row.theme);
+  const correlation = finite(row.correlation);
+  if (!slug || !theme || correlation == null) return null;
+  const overlap = finite(row.overlapping_ticker_count);
+  return {
+    slug,
+    theme,
+    correlation,
+    ...(overlap == null ? {} : { overlapping_ticker_count: Math.max(0, Math.round(overlap)) }),
+  };
+}
+
+function neighborList(value: unknown): ThemeNeighborRowV0[] {
+  return (Array.isArray(value) ? value : [])
+    .map(neighborRow)
+    .filter((item): item is ThemeNeighborRowV0 => item != null);
+}
+
+const OUTSIDE_TILE_LIMIT = 3;
+const IN_GROUP_TILE_LIMIT = 5;
+
+function takeNeighborExtreme(
+  rows: ThemeNeighborRowV0[],
+  direction: "highest" | "lowest",
+  limit: number,
+): ThemeNeighborRowV0[] {
+  if (rows.length === 0) return [];
+  const sorted =
+    direction === "highest"
+      ? [...rows].sort((a, b) => b.correlation - a.correlation || a.theme.localeCompare(b.theme))
+      : [...rows].sort((a, b) => a.correlation - b.correlation || a.theme.localeCompare(b.theme));
+  return sorted.slice(0, limit);
+}
+
+function parseThemeNeighbors(raw: unknown): ThemeThemeNeighborsV0 | null {
+  const row = record(raw);
+  if (text(row.schema_version) !== "theme.theme_neighbors.v0") return null;
+  const slug = text(row.slug);
+  const window = text(row.window) || "1Y";
+  const aggType = text(row.agg_type) || "manual_theme_weights";
+  if (!slug) return null;
+  let closestInGroup = neighborList(row.closest_in_group);
+  let furthestInGroup = neighborList(row.furthest_in_group);
+  let closestAcross = neighborList(row.closest_across);
+  let furthestOutside = neighborList(row.furthest_outside);
+  // Legacy sidecars: full in_group + closest_outside / least_related_outside.
+  if (!closestInGroup.length && !furthestInGroup.length) {
+    const legacyInGroup = neighborList(row.in_group);
+    closestInGroup = takeNeighborExtreme(legacyInGroup, "highest", IN_GROUP_TILE_LIMIT);
+    furthestInGroup = takeNeighborExtreme(legacyInGroup, "lowest", IN_GROUP_TILE_LIMIT);
+  }
+  if (!closestAcross.length) {
+    closestAcross = neighborList(row.closest_outside).slice(0, OUTSIDE_TILE_LIMIT);
+  }
+  if (!furthestOutside.length) {
+    furthestOutside = neighborList(row.least_related_outside).slice(0, OUTSIDE_TILE_LIMIT);
+  }
+  const total = finite(row.in_group_total);
+  return {
+    schema_version: "theme.theme_neighbors.v0",
+    slug,
+    theme: text(row.theme) || undefined,
+    as_of: text(row.as_of) || undefined,
+    window,
+    agg_type: aggType,
+    group: text(row.group) || undefined,
+    in_group_total: Math.max(0, Math.round(total ?? 0)),
+    closest_in_group: closestInGroup,
+    furthest_in_group: furthestInGroup,
+    closest_across: closestAcross,
+    furthest_outside: furthestOutside,
+  };
+}
+
+export async function fetchThemeNeighbors(
+  slug: string,
+  signal?: AbortSignal,
+): Promise<ThemeThemeNeighborsV0 | null> {
+  const raw = await fetchJson(
+    `themes/${encodeURIComponent(slug)}${THEME_NEIGHBORS_SIDECAR_SUFFIX}`,
+    signal,
+  );
+  return parseThemeNeighbors(raw);
 }
 
 export function availableCohesionHorizons(

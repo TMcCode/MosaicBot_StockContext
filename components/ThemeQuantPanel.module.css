@@ -20,6 +20,23 @@
   color: var(--text-primary, #e8eaed);
 }
 
+.eyebrow {
+  margin: 0;
+  color: var(--text-secondary, #9aa8a6);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.asOf {
+  margin: 4px 0 0;
+  color: var(--text-muted, #788582);
+  font-size: 9px;
+  line-height: 1.25;
+  opacity: 0.72;
+}
+
 .periods {
   display: flex;
   flex-wrap: wrap;
@@ -62,6 +79,23 @@
   min-width: 5.5rem;
 }
 
+.cohesionGrid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.45rem;
+  margin: 0 0 0.65rem;
+}
+
+.metricCard {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--border, rgba(38, 252, 214, 0.12));
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
 .metricLabel {
   display: block;
   font-size: 0.66rem;
@@ -72,9 +106,31 @@
 }
 
 .metricValue {
-  font-size: 0.9rem;
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 1.05rem;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: var(--text-primary, #e8eaed);
+}
+
+.metricContext {
+  display: block;
+  margin-top: auto;
+  padding-top: 0.3rem;
+  font-size: 0.68rem;
+  line-height: 1.35;
+  color: var(--text-muted, #7a8886);
+}
+
+@media (max-width: 900px) {
+  .cohesionGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .cohesionGrid > .metricCard:last-child {
+    grid-column: span 2;
+  }
 }
 
 .factorStrip {
@@ -192,56 +248,209 @@
 }
 
 .matrixScroll {
-  /* Let the full top-20 grid use page height; only scroll horizontally if needed. */
+  /* Full published grid; scroll horizontally if needed. Cell size via data-density. */
   overflow-x: auto;
   overflow-y: visible;
   overscroll-behavior: contain;
   border: 1px solid var(--border, rgba(38, 252, 214, 0.12));
   border-radius: 8px;
+  width: max-content;
   min-width: 0;
+  max-width: 100%;
 }
 
 .corrLayout {
   display: grid;
-  grid-template-columns: minmax(0, 1.55fr) minmax(14rem, 0.8fr);
-  gap: 0.75rem 0.9rem;
+  grid-template-columns: minmax(0, max-content);
+  width: max-content;
+  max-width: 100%;
+  gap: 0.45rem;
   align-items: start;
+}
+
+.neighborGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.45rem;
+  align-items: start;
+}
+
+.matrixSection {
+  margin-top: 0.35rem;
+}
+
+.matrixDetails {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+  border: none;
+  padding: 0;
+  background: transparent;
+}
+
+.matrixDetails > summary {
+  cursor: pointer;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.matrixDetails > summary::-webkit-details-marker {
+  display: none;
+}
+
+.matrixDetails[open] > summary {
+  margin-bottom: 0;
+}
+
+.neighborCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid var(--border, rgba(38, 252, 214, 0.12));
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.neighborCard .colTitle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.neighborCard .tickerLink {
+  font-size: 0.72rem;
+  line-height: 1.25;
+}
+
+.neighborList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.neighborList li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+  padding: 0.18rem 0;
+  border-bottom: 1px solid var(--border, rgba(38, 252, 214, 0.08));
+  color: var(--text-secondary, #9aa8a6);
+  font-size: 0.72rem;
+}
+
+.neighborList .num {
+  flex: 0 0 auto;
+  font-size: 0.72rem;
+  font-weight: 550;
+  line-height: 1.2;
+  color: var(--text-muted, #7a8886);
+}
+
+.neighborList li:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.neighborList li:first-child {
+  padding-top: 0;
+}
+
+.neighborMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+  min-width: 0;
+}
+
+.neighborGroup {
+  overflow: hidden;
+  color: var(--text-muted, #7a8886);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.moreLink {
+  appearance: none;
+  align-self: flex-start;
+  border: none;
+  background: transparent;
+  padding: 0.1rem 0 0;
+  margin: 0;
+  font: inherit;
+  font-size: 0.68rem;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  color: var(--accent, #26fcd6);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.moreLink:hover {
+  text-decoration: underline;
 }
 
 .corrSide {
   display: flex;
   flex-direction: column;
-  gap: 0.55rem;
+  gap: 0.45rem;
   min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .pairGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.5rem;
+  gap: 0.25rem 0.75rem;
+  width: 100%;
+}
+
+.pairBlock {
+  min-width: 0;
+}
+
+.pairBlock .colTitle {
+  margin: 0 0 0.15rem;
 }
 
 .pairList {
   list-style: none;
   margin: 0;
   padding: 0;
-  border: 1px solid var(--border, rgba(38, 252, 214, 0.12));
-  border-radius: 8px;
-  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: none;
 }
 
 .pairList li {
   display: flex;
+  align-items: baseline;
   justify-content: space-between;
-  gap: 0.75rem;
-  padding: 0.28rem 0.5rem;
-  font-size: 0.78rem;
-  border-bottom: 1px solid var(--border, rgba(38, 252, 214, 0.08));
+  gap: 0.5rem;
+  padding: 1px 0;
+  font-size: 0.65rem;
+  line-height: 1.3;
+  border-bottom: none;
   color: var(--text-secondary, #9aa8a6);
 }
 
 .pairList li:last-child {
   border-bottom: none;
+}
+
+@media (max-width: 1100px) {
+  .neighborGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 900px) {
@@ -254,9 +463,17 @@
   }
 }
 
+@media (max-width: 560px) {
+  .neighborGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .matrix {
   border-collapse: collapse;
   font-size: 0.7rem;
+  width: max-content;
+  max-width: none;
 }
 
 .matrix th,
@@ -266,6 +483,26 @@
   border: 1px solid var(--border, rgba(38, 252, 214, 0.08));
   font-variant-numeric: tabular-nums;
   min-width: 2.4rem;
+}
+
+.matrix[data-density="compact"] {
+  font-size: 0.62rem;
+}
+
+.matrix[data-density="compact"] th,
+.matrix[data-density="compact"] td {
+  padding: 0.12rem 0.2rem;
+  min-width: 1.75rem;
+}
+
+.matrix[data-density="dense"] {
+  font-size: 0.56rem;
+}
+
+.matrix[data-density="dense"] th,
+.matrix[data-density="dense"] td {
+  padding: 0.08rem 0.12rem;
+  min-width: 1.4rem;
 }
 
 .matrix th {
