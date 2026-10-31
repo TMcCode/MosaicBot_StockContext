@@ -7,13 +7,16 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 import {
+  MOSAIC_THEMES_BUCKET,
   STOCKCONTEXT_PREFIX,
   STOCKCONTEXT_PUBLIC_BASE_URL,
   STOCKTHEMES_MANIFEST_URL,
   STOCKTHEMES_PUBLIC_BASE_URL,
 } from "./lib/storageConfig.mjs";
 import {
+  APP_PRIVATE_PREFIX,
   downloadR2Object,
+  loadR2Credentials,
   normalizeEtag,
   r2ObjectMetadata,
   r2SyncEnabled,
@@ -139,13 +142,70 @@ async function downloadFromCdn(relative, meta) {
   return true;
 }
 
-/** Chart performance sidecars from stockthemes public CDN → public/chart-data (static export). */
-async function downloadStockthemesChartFile(relative, meta, { optional = false } = {}) {
+/**
+ * Normalize a chart-data relative path for local bake.
+ * Theme jobs may URI-encode the slug segment; filesystem cache uses decoded names.
+ */
+function chartDataDestRel(relative) {
   const rel = relative.replace(/^\//, "");
-  const metaKey = `chart-data/${rel}`;
-  const url = `${STOCKTHEMES_PUBLIC_BASE_URL}/${rel}`;
-  const dest = path.join(CHART_DATA_DIR, rel);
+  if (!rel.startsWith("themes/")) return rel;
+  const rest = rel.slice("themes/".length);
+  try {
+    return `themes/${decodeURIComponent(rest)}`;
+  } catch {
+    return `themes/${rest}`;
+  }
+}
+
+/** Theme overlay/quant sidecars are Tier B under mosaic-themes/stockthemes_app/themes/. */
+function themeTierBObjectPath(relative) {
+  const destRel = chartDataDestRel(relative);
+  if (!destRel.startsWith("themes/")) return null;
+  return `${APP_PRIVATE_PREFIX}/${destRel}`;
+}
+
+/**
+ * Chart / quant sidecars → public/chart-data (static export).
+ * Theme Tier B files come from private R2; spy + ticker overlays stay on the public CDN.
+ */
+async function downloadStockthemesChartFile(relative, meta, { optional = false } = {}) {
+  const destRel = chartDataDestRel(relative);
+  const metaKey = `chart-data/${destRel}`;
+  const dest = path.join(CHART_DATA_DIR, destRel);
   const prev = meta.files[metaKey];
+  const privateKey = themeTierBObjectPath(relative);
+
+  if (privateKey) {
+    if (!loadR2Credentials()) {
+      if (optional) return false;
+      throw new Error(`R2 credentials required for Tier B chart sidecar ${destRel}`);
+    }
+    try {
+      const remote = await r2ObjectMetadata(privateKey, { bucket: MOSAIC_THEMES_BUCKET });
+      if (!remote) return false;
+      const prevEtag = normalizeEtag(prev?.etag);
+      const remoteEtag = normalizeEtag(remote.etag);
+      if (remoteEtag && prevEtag === remoteEtag && fs.existsSync(dest)) {
+        return false;
+      }
+      const text = await downloadR2Object(privateKey, { bucket: MOSAIC_THEMES_BUCKET });
+      ensureDir(dest);
+      fs.writeFileSync(dest, text);
+      meta.files[metaKey] = {
+        etag: remoteEtag,
+        at: new Date().toISOString(),
+        source: "stockthemes-app-r2",
+      };
+      return true;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      if (msg.includes("404")) return false;
+      if (optional) return false;
+      throw e;
+    }
+  }
+
+  const url = `${STOCKTHEMES_PUBLIC_BASE_URL}/${relative.replace(/^\//, "")}`;
   const headers = { cache: "no-store" };
   if (normalizeEtag(prev?.etag) && fs.existsSync(dest)) {
     const ifNoneMatch = formatEtag(prev.etag);
@@ -155,7 +215,7 @@ async function downloadStockthemesChartFile(relative, meta, { optional = false }
   try {
     const res = await fetch(url, { headers });
     if (res.status === 404) {
-      return optional ? false : false;
+      return false;
     }
     if (res.status === 304) {
       return false;
@@ -227,6 +287,8 @@ async function syncChartPerformanceSidecars(manifest, meta) {
       jobs.push({ rel: `themes/${enc}.factor_attribution.v0.json`, optional: true });
       jobs.push({ rel: `themes/${enc}.stock_correlations.v0.json`, optional: true });
       jobs.push({ rel: `themes/${enc}.theme_neighbors.v0.json`, optional: true });
+      // Prefer publisher bundle when present; bakeCorrelationBundles fills gaps from parts.
+      jobs.push({ rel: `themes/${enc}.correlation_bundle.v0.json`, optional: true });
     }
   }
 
@@ -238,10 +300,64 @@ async function syncChartPerformanceSidecars(manifest, meta) {
     else skipped += 1;
   });
 
+  const bakedBundles = bakeCorrelationBundles(themes, meta);
+
   console.log(
-    `sync-stockcontext-ci: chart sidecars ok (${downloaded} updated, ${skipped} unchanged/missing, ${jobs.length} checked)`,
+    `sync-stockcontext-ci: chart sidecars ok (${downloaded} updated, ${skipped} unchanged/missing, ${jobs.length} checked; correlation bundles baked=${bakedBundles})`,
   );
   return downloaded;
+}
+
+function readLocalChartJson(rel) {
+  const dest = path.join(CHART_DATA_DIR, rel);
+  if (!fs.existsSync(dest)) return null;
+  try {
+    return JSON.parse(fs.readFileSync(dest, "utf8"));
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Ensure each theme has a single-request correlation bundle under public/chart-data.
+ * Uses CDN-published bundles when present; otherwise merges the three legacy sidecars.
+ */
+function bakeCorrelationBundles(themes, meta) {
+  let baked = 0;
+  for (const entry of themes || []) {
+    const slug = String(entry?.slug || entry || "").trim();
+    if (!slug) continue;
+    if (!(entry?.meta_url && entry?.has_table_data !== false)) continue;
+    const enc = encodeURIComponent(slug);
+    const bundleRel = `themes/${enc}.correlation_bundle.v0.json`;
+    const bundlePath = path.join(CHART_DATA_DIR, bundleRel);
+    const existing = readLocalChartJson(bundleRel);
+    if (existing?.schema_version === "theme.correlation_bundle.v0") continue;
+
+    const attribution = readLocalChartJson(`themes/${enc}.factor_attribution.v0.json`);
+    const stockCorrelations = readLocalChartJson(`themes/${enc}.stock_correlations.v0.json`);
+    const neighbors = readLocalChartJson(`themes/${enc}.theme_neighbors.v0.json`);
+    if (!attribution && !stockCorrelations && !neighbors) continue;
+
+    const bundle = {
+      schema_version: "theme.correlation_bundle.v0",
+      slug,
+      as_of:
+        attribution?.as_of || stockCorrelations?.as_of || neighbors?.as_of || undefined,
+      stock_correlations: stockCorrelations,
+      attribution,
+      neighbors,
+    };
+    ensureDir(bundlePath);
+    fs.writeFileSync(bundlePath, `${JSON.stringify(bundle)}\n`);
+    meta.files[`chart-data/${bundleRel}`] = {
+      etag: null,
+      at: new Date().toISOString(),
+      source: "local-correlation-bundle-bake",
+    };
+    baked += 1;
+  }
+  return baked;
 }
 
 /**

@@ -1,3 +1,4 @@
+export const MOSAIC_THEMES_BUCKET = "mosaic-themes";
 export const STOCKTHEMES_PUBLIC_BUCKET = "stockthemes-public";
 export const STOCKTHEMES_PUBLIC_BASE_URL = "https://storage.stockthemes.ai";
 export const STOCKCONTEXT_PREFIX = "stockcontext";
