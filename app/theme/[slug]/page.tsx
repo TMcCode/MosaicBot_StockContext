@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { PageReadControl } from "@/components/PageReadControl";
 import { TableSection } from "@/components/TableSection";
 import { ThemeChartSection } from "@/components/ThemeChartSection";
-import { ThemeCorrMatrixPanel } from "@/components/ThemeCorrMatrixPanel";
+import { ThemeCorrSection } from "@/components/ThemeCorrSection";
 import { ThemeNewsPanel } from "@/components/ThemeNewsPanel";
 import { ThemeQuantPanel } from "@/components/ThemeQuantPanel";
 import { TierBadge } from "@/components/TierBadge";
@@ -166,7 +166,7 @@ export default async function ThemePage({ params }: Props) {
       )}
 
       {newsIndex ? <ThemeNewsPanel slug={slug} themeName={meta.name} index={newsIndex} /> : null}
-      <ThemeCorrMatrixPanel slug={slug} themeName={meta.name} />
+      <ThemeCorrSection slug={slug} themeName={meta.name} />
 
       <section className="card">
         <h2>Constituents</h2>

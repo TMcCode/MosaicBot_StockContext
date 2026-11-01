@@ -4,11 +4,7 @@ import Link from "next/link";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { themeHref } from "@/lib/links";
-import {
-  fetchThemeFactorAttribution,
-  fetchThemeNeighbors,
-  fetchThemeStockCorrelations,
-} from "@/lib/themeQuantSidecars";
+import { fetchThemeCorrelationBundle } from "@/lib/themeQuantSidecars";
 import type { ThemeFactorAttributionV0 } from "@/lib/types/theme.factor_attribution.v0";
 import type { ThemeStockCorrelationsV0 } from "@/lib/types/theme.stock_correlations.v0";
 import type {
@@ -277,48 +273,22 @@ function NeighborList({
   );
 }
 
+/** Mounted by ThemeCorrSection after viewport gate + dynamic import. */
 export function ThemeCorrMatrixPanel({ slug, themeName }: Props) {
-  const hostRef = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
   const [payload, setPayload] = useState<ThemeStockCorrelationsV0 | null>(null);
   const [attribution, setAttribution] = useState<ThemeFactorAttributionV0 | null>(null);
   const [neighbors, setNeighbors] = useState<ThemeThemeNeighborsV0 | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const el = hostRef.current;
-    if (!el) return;
-    if (typeof IntersectionObserver === "undefined") {
-      setVisible(true);
-      return;
-    }
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry?.isIntersecting) {
-          setVisible(true);
-          observer.disconnect();
-        }
-      },
-      { rootMargin: "80px 0px", threshold: 0.01 },
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-
-  useEffect(() => {
-    if (!visible) return;
     const controller = new AbortController();
     setLoading(true);
-    Promise.all([
-      fetchThemeStockCorrelations(slug, controller.signal),
-      fetchThemeFactorAttribution(slug, controller.signal),
-      fetchThemeNeighbors(slug, controller.signal),
-    ])
-      .then(([corr, attr, neigh]) => {
+    fetchThemeCorrelationBundle(slug, controller.signal)
+      .then((bundle) => {
         if (controller.signal.aborted) return;
-        setPayload(corr);
-        setAttribution(attr);
-        setNeighbors(neigh);
+        setPayload(bundle?.stock_correlations ?? null);
+        setAttribution(bundle?.attribution ?? null);
+        setNeighbors(bundle?.neighbors ?? null);
       })
       .catch(() => {
         if (!controller.signal.aborted) {
@@ -331,7 +301,7 @@ export function ThemeCorrMatrixPanel({ slug, themeName }: Props) {
         if (!controller.signal.aborted) setLoading(false);
       });
     return () => controller.abort();
-  }, [slug, visible]);
+  }, [slug]);
 
   const cohesion = attribution?.cohesion?.[COHESION_HORIZON] ?? null;
   const asOf = attribution?.as_of || payload?.as_of || neighbors?.as_of;
@@ -351,22 +321,16 @@ export function ThemeCorrMatrixPanel({ slug, themeName }: Props) {
     };
   }, [payload, tickers]);
 
-  if (!visible) {
-    return <div ref={hostRef} aria-hidden="true" />;
-  }
-
   if (loading && !payload && !cohesion && !neighbors) {
     return (
-      <div ref={hostRef}>
-        <section className={`card ${styles.panel}`} aria-busy="true">
-          <p className={styles.status}>Loading correlation…</p>
-        </section>
-      </div>
+      <section className={`card ${styles.panel}`} aria-busy="true">
+        <p className={styles.status}>Loading correlation…</p>
+      </section>
     );
   }
 
   if (!payload && !cohesion && !neighbors) {
-    return <div ref={hostRef} />;
+    return null;
   }
 
   const medianFoot = cohesion
@@ -385,7 +349,6 @@ export function ThemeCorrMatrixPanel({ slug, themeName }: Props) {
     : null;
 
   return (
-    <div ref={hostRef}>
       <section className={`card ${styles.panel}`} aria-label={`${themeName} correlation`}>
         <div className={styles.header}>
           <div>
@@ -594,6 +557,5 @@ export function ThemeCorrMatrixPanel({ slug, themeName }: Props) {
           </div>
         ) : null}
       </section>
-    </div>
   );
 }

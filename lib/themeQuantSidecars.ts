@@ -1,4 +1,9 @@
 import { stockthemesBrowserChartFetchBase } from "@/lib/chart/stockthemesPublicBase";
+import {
+  stockthemesBrowserCacheBusterQuery,
+  stockthemesBrowserFetchCache,
+} from "@/lib/stockthemesBrowserCache";
+import type { ThemeCorrelationBundleV0 } from "@/lib/types/theme.correlation_bundle.v0";
 import type { ThemeFactorProfileV0 } from "@/lib/types/theme.factor_profile.v0";
 import type {
   ThemeCohesionHorizonV0,
@@ -16,6 +21,7 @@ export const FACTOR_PROFILE_SIDECAR_SUFFIX = ".factor_profile.v0.json";
 export const FACTOR_ATTRIBUTION_SIDECAR_SUFFIX = ".factor_attribution.v0.json";
 export const STOCK_CORRELATIONS_SIDECAR_SUFFIX = ".stock_correlations.v0.json";
 export const THEME_NEIGHBORS_SIDECAR_SUFFIX = ".theme_neighbors.v0.json";
+export const CORRELATION_BUNDLE_SIDECAR_SUFFIX = ".correlation_bundle.v0.json";
 
 export const FACTOR_ATTRIBUTION_HORIZON_ORDER: ThemeFactorAttributionHorizon[] = [
   "1M",
@@ -48,10 +54,14 @@ async function fetchJson(
   signal?: AbortSignal,
 ): Promise<unknown | null> {
   const base = stockthemesBrowserChartFetchBase();
-  const url = `${base}/${path.replace(/^\//, "")}`;
+  const buster = stockthemesBrowserCacheBusterQuery();
+  const url = `${base}/${path.replace(/^\//, "")}?${buster}`;
   try {
-    // Avoid stale top-12 matrices after CDN/bake bumps (Pages JSON can be cached ~10m).
-  const res = await fetch(url, { credentials: "omit", cache: "no-store", signal });
+    const res = await fetch(url, {
+      credentials: "omit",
+      cache: stockthemesBrowserFetchCache(),
+      signal,
+    });
     if (!res.ok) return null;
     return await res.json();
   } catch (e) {
@@ -59,6 +69,9 @@ async function fetchJson(
     return null;
   }
 }
+
+const bundleResultCache = new Map<string, ThemeCorrelationBundleV0 | null>();
+const bundleInflight = new Map<string, Promise<ThemeCorrelationBundleV0 | null>>();
 
 function parseFactorProfile(raw: unknown): ThemeFactorProfileV0 | null {
   const row = record(raw);
@@ -307,6 +320,100 @@ export async function fetchThemeNeighbors(
     signal,
   );
   return parseThemeNeighbors(raw);
+}
+
+function parseCorrelationBundle(raw: unknown): ThemeCorrelationBundleV0 | null {
+  const row = record(raw);
+  if (text(row.schema_version) !== "theme.correlation_bundle.v0") return null;
+  const slug = text(row.slug);
+  if (!slug) return null;
+  const stockCorrelations =
+    row.stock_correlations == null ? null : parseStockCorrelations(row.stock_correlations);
+  const attribution = row.attribution == null ? null : parseAttribution(row.attribution);
+  const neighbors = row.neighbors == null ? null : parseThemeNeighbors(row.neighbors);
+  if (!stockCorrelations && !attribution && !neighbors) return null;
+  return {
+    schema_version: "theme.correlation_bundle.v0",
+    slug,
+    as_of: text(row.as_of) || undefined,
+    stock_correlations: stockCorrelations,
+    attribution,
+    neighbors,
+  };
+}
+
+function emptyBundle(slug: string): ThemeCorrelationBundleV0 {
+  return {
+    schema_version: "theme.correlation_bundle.v0",
+    slug,
+    stock_correlations: null,
+    attribution: null,
+    neighbors: null,
+  };
+}
+
+async function fetchCorrelationBundleParts(
+  slug: string,
+  signal?: AbortSignal,
+): Promise<ThemeCorrelationBundleV0> {
+  const [stockCorrelations, attribution, neighbors] = await Promise.all([
+    fetchThemeStockCorrelations(slug, signal),
+    fetchThemeFactorAttribution(slug, signal),
+    fetchThemeNeighbors(slug, signal),
+  ]);
+  if (!stockCorrelations && !attribution && !neighbors) {
+    return emptyBundle(slug);
+  }
+  return {
+    schema_version: "theme.correlation_bundle.v0",
+    slug,
+    as_of:
+      attribution?.as_of || stockCorrelations?.as_of || neighbors?.as_of || undefined,
+    stock_correlations: stockCorrelations,
+    attribution,
+    neighbors,
+  };
+}
+
+/**
+ * Prefer one-request `.correlation_bundle.v0.json`; fall back to the three legacy sidecars.
+ * Process-lifetime cache mirrors chart sidecars (prod only).
+ */
+export async function fetchThemeCorrelationBundle(
+  slug: string,
+  signal?: AbortSignal,
+): Promise<ThemeCorrelationBundleV0 | null> {
+  const key = slug.trim();
+  if (!key) return null;
+  const cacheEnabled = process.env.NODE_ENV !== "development";
+  if (cacheEnabled && bundleResultCache.has(key)) return bundleResultCache.get(key)!;
+
+  const inflight = bundleInflight.get(key);
+  if (inflight) return inflight;
+
+  const promise = (async () => {
+    const raw = await fetchJson(
+      `themes/${encodeURIComponent(key)}${CORRELATION_BUNDLE_SIDECAR_SUFFIX}`,
+      signal,
+    );
+    const bundled = raw != null ? parseCorrelationBundle(raw) : null;
+    if (bundled) return bundled;
+    const parts = await fetchCorrelationBundleParts(key, signal);
+    const hasAnything =
+      Boolean(parts.stock_correlations) ||
+      Boolean(parts.attribution) ||
+      Boolean(parts.neighbors);
+    return hasAnything ? parts : null;
+  })();
+
+  bundleInflight.set(key, promise);
+  try {
+    const result = await promise;
+    if (cacheEnabled) bundleResultCache.set(key, result);
+    return result;
+  } finally {
+    bundleInflight.delete(key);
+  }
 }
 
 export function availableCohesionHorizons(
