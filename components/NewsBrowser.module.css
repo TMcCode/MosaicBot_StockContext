@@ -127,6 +127,27 @@
   letter-spacing: 0.02em;
 }
 
+.originChip {
+  cursor: default;
+  border-style: dashed;
+  opacity: 0.92;
+}
+
+.originChip:hover {
+  color: var(--text-muted, var(--muted));
+  border-color: var(--border, rgba(38, 252, 214, 0.16));
+}
+
+.originTimbot {
+  border-color: rgba(250, 204, 21, 0.35);
+  color: #e8c84a;
+}
+
+.originRadar {
+  border-color: rgba(125, 211, 252, 0.35);
+  color: #7dd3fc;
+}
+
 .snippet {
   margin: 0;
   font-size: 0.9rem;

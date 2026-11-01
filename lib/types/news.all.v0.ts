@@ -1,5 +1,8 @@
 /** 90-day all-news feed published by MosaicBot (`news_radar/all_news_feed.py`). */
 
+/** Compact origin codes from the news store (`all_news_feed._origin_codes`). */
+export type AllNewsOriginCode = "tb" | "theme" | "ticker" | "top" | "sweep" | "radar";
+
 /** Filter fields for one story (index row). */
 export type AllNewsItemV0 = {
   i: string;
@@ -20,6 +23,8 @@ export type AllNewsDetailV0 = {
   u: string;
   /** Snippet (≤ 300 chars). */
   n?: string;
+  /** How the story entered the store: TimBot and/or which radar run(s). */
+  o?: AllNewsOriginCode[];
 };
 
 export type AllNewsIndexV0 = {

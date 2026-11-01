@@ -7,7 +7,13 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { fetchAllNewsIndex, fetchAllNewsWeek, newsDayLabel } from "@/lib/allNews";
 import { useAuthUser } from "@/lib/auth/AuthUserContext";
 import { href } from "@/lib/links";
-import type { AllNewsDetailV0, AllNewsIndexV0, AllNewsItemV0, AllNewsStory } from "@/lib/types/news.all.v0";
+import type {
+  AllNewsDetailV0,
+  AllNewsIndexV0,
+  AllNewsItemV0,
+  AllNewsOriginCode,
+  AllNewsStory,
+} from "@/lib/types/news.all.v0";
 
 import styles from "./NewsBrowser.module.css";
 
@@ -15,6 +21,24 @@ const DAY_OPTIONS = [1, 7, 30, 90];
 const MAX_THEME_CHIPS = 3;
 const MAX_TICKER_CHIPS = 4;
 const PREFETCH_MARGIN = "900px 0px";
+
+const ORIGIN_LABEL: Record<AllNewsOriginCode, string> = {
+  tb: "TimBot",
+  theme: "Theme run",
+  ticker: "Ticker run",
+  top: "Top stories",
+  sweep: "Market sweep",
+  radar: "Radar",
+};
+
+const ORIGIN_TITLE: Record<AllNewsOriginCode, string> = {
+  tb: "Manually added via TimBot",
+  theme: "Added by a theme keyword search run",
+  ticker: "Added by a ticker search run",
+  top: "Added by a top-stories run",
+  sweep: "Added by a market-sweep run",
+  radar: "Added by a NewsAPI radar run",
+};
 
 type Filters = { sector: string; group: string; theme: string; ticker: string; days: number };
 
@@ -420,6 +444,7 @@ type RowProps = {
 const NewsRow = memo(function NewsRow({ item, detail, themes, onTheme, onTicker }: RowProps) {
   const themeChips = themes ? (item.th ?? []).filter((t) => themes[t]).slice(0, MAX_THEME_CHIPS) : [];
   const tickerChips = (item.tk ?? []).slice(0, MAX_TICKER_CHIPS);
+  const originChips = (detail.o ?? []).filter((code): code is AllNewsOriginCode => code in ORIGIN_LABEL);
 
   return (
     <li className={styles.row}>
@@ -429,6 +454,22 @@ const NewsRow = memo(function NewsRow({ item, detail, themes, onTheme, onTicker 
       <div className={styles.meta}>
         {detail.s ? <span className={styles.source}>{detail.s}</span> : null}
         <time dateTime={item.d}>{newsDayLabel(item.d)}</time>
+        {originChips.map((code) => (
+          <span
+            key={code}
+            className={[
+              styles.chip,
+              styles.originChip,
+              code === "tb" ? styles.originTimbot : "",
+              code === "radar" ? styles.originRadar : "",
+            ]
+              .filter(Boolean)
+              .join(" ")}
+            title={ORIGIN_TITLE[code]}
+          >
+            {ORIGIN_LABEL[code]}
+          </span>
+        ))}
         {themeChips.map((t) => (
           <button key={t} type="button" className={styles.chip} onClick={() => onTheme(t)}>
             {themes?.[t]?.n}
