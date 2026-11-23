@@ -70,16 +70,39 @@
   line-height: 1.35;
 }
 
-.pick {
+.flip {
   flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  user-select: none;
+}
+
+.flipBtn {
+  appearance: none;
+  border: none;
+  background: transparent;
+  padding: 0 0.15rem;
+  margin: 0;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--text-muted, #7a8886);
+  cursor: pointer;
+}
+
+.flipBtn:hover {
+  color: var(--accent, #26fcd6);
+}
+
+.flipCount {
   font-size: 0.65rem;
   font-weight: 600;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  padding: 0.05rem 0.4rem;
-  border-radius: 999px;
-  border: 1px solid var(--accent, #26fcd6);
-  color: var(--accent, #26fcd6);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted, #7a8886);
+  min-width: 1.6em;
+  text-align: center;
 }
 
 .meta,

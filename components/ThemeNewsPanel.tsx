@@ -58,30 +58,57 @@ function groupByMonth(items: ThemeNewsItemV0[]): { month: string; items: ThemeNe
 }
 
 function NewsRow({ item }: { item: ThemeNewsItemV0 }) {
+  const versions = [
+    item,
+    ...(item.also ?? []).filter((a) => Boolean(a?.id && a.url && a.title)),
+  ];
+  const [idx, setIdx] = useState(0);
+  const total = versions.length;
+  const safeIdx = Math.min(Math.max(idx, 0), total - 1);
+  const view = versions[safeIdx] ?? item;
+
+  const flipper =
+    total > 1 ? (
+      <span className={styles.flip} role="group" aria-label="Versions of this story">
+        <button
+          type="button"
+          className={styles.flipBtn}
+          aria-label="Previous version of this story"
+          onClick={() => setIdx(safeIdx - 1 < 0 ? total - 1 : safeIdx - 1)}
+        >
+          ‹
+        </button>
+        <span className={styles.flipCount} aria-live="polite">
+          {safeIdx + 1}/{total}
+        </span>
+        <button
+          type="button"
+          className={styles.flipBtn}
+          aria-label="Next version of this story"
+          onClick={() => setIdx(safeIdx + 1 >= total ? 0 : safeIdx + 1)}
+        >
+          ›
+        </button>
+      </span>
+    ) : null;
+
   return (
     <li className={styles.row}>
       <div className={styles.line}>
-        <span className={styles.date}>{item.date ? dayLabel(item.date) : "—"}</span>
-        <a className={styles.title} href={item.url} target="_blank" rel="noopener noreferrer">
-          {item.title}
+        <span className={styles.date}>{view.date ? dayLabel(view.date) : "—"}</span>
+        <a className={styles.title} href={view.url} target="_blank" rel="noopener noreferrer">
+          {view.title}
         </a>
-        {item.picked ? (
-          <span
-            className={styles.pick}
-            title={item.on_site ? "Editorial pick · shown on stockthemes Radar" : "Editorial pick"}
-          >
-            Pick
-          </span>
-        ) : null}
       </div>
-      {item.source || item.tickers?.length ? (
+      {flipper || view.source || view.tickers?.length ? (
         <p className={styles.meta}>
-          {[item.source, item.tickers?.length ? item.tickers.join(" · ") : null]
+          {flipper}
+          {[view.source, view.tickers?.length ? view.tickers.join(" · ") : null]
             .filter(Boolean)
             .join(" — ")}
         </p>
       ) : null}
-      {item.note ? <p className={styles.note}>{item.note}</p> : null}
+      {"note" in view && view.note ? <p className={styles.note}>{view.note}</p> : null}
     </li>
   );
 }
