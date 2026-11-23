@@ -108,7 +108,9 @@ function NewsRow({ item }: { item: ThemeNewsItemV0 }) {
             .join(" — ")}
         </p>
       ) : null}
-      {"note" in view && view.note ? <p className={styles.note}>{view.note}</p> : null}
+      {typeof view.note === "string" && view.note ? (
+        <p className={styles.note}>{view.note}</p>
+      ) : null}
     </li>
   );
 }
